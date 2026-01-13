@@ -1,0 +1,28 @@
+# Keil 编译生成的文件和目录
+*.o
+*.d
+*.crf
+*.lst
+*.map
+*.axf
+*.dep
+*.htm
+*.bak
+*.log
+*.uvguix.*
+*.uvoptx.user
+*.i
+
+# Keil 生成的二进制文件
+*.bin
+*.hex
+*.elf
+
+# Keil 生成的调试信息
+*.uvoptx
+*.uvgui.*
+*.dep
+
+# Keil 生成的输出目录
+Objects/
+Listings/
