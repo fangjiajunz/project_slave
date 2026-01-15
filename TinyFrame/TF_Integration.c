@@ -8,10 +8,25 @@
  *
  * 另外，如果你想使用监听器超时功能，请记得定期调用 TF_Tick()。
  */
-
+#include "main.h"
+extern context_e22_t context_e22;
 void TF_WriteImpl(TinyFrame *tf, const uint8_t *buff, uint32_t len)
 {
     // 发送到 UART
+    (void)tf;
+    // 等待上次发送完成（如果有）
+    while (context_e22.is_tx)
+    {
+        // 可选：加超时保护
+    }
+    // 启动发送
+    e22_demo_transmit((uint8_t *)buff, (uint8_t)len);
+
+    // 等待本次发送完成
+    while (context_e22.is_tx)
+    {
+        // 阻塞直到 TX_DONE 中断
+    }
 }
 
 // --------- 互斥锁回调函数 ----------

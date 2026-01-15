@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.h
-  * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.h
+ * @brief          : Header for main.c file.
+ *                   This file contains the common defines of the application.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -23,7 +23,8 @@
 #define __MAIN_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -33,31 +34,42 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
 #include <stdio.h>
+
 #include "application.h"
-/* USER CODE END Includes */
+    /* USER CODE END Includes */
 
-/* Exported types ------------------------------------------------------------*/
-/* USER CODE BEGIN ET */
-typedef enum
-{	
-	KEY_NAME_UP = 0,
-	KEY_NAME_DOWN ,
-	KEY_NAME_ENTER,
-}key_name_t;
-/* USER CODE END ET */
+    /* Exported types ------------------------------------------------------------*/
+    /* USER CODE BEGIN ET */
+    typedef enum
+    {
+        KEY_NAME_UP = 0,
+        KEY_NAME_DOWN,
+        KEY_NAME_ENTER,
+    } key_name_t;
 
-/* Exported constants --------------------------------------------------------*/
-/* USER CODE BEGIN EC */
+    typedef struct
+    {
+        bool is_tx;
+        bool is_rx;
+        uint8_t rx_buffer[255];
+        uint8_t rx_length;
+        int8_t rx_rssi;
+    } context_e22_t;
 
-/* USER CODE END EC */
+    /* USER CODE END ET */
 
-/* Exported macro ------------------------------------------------------------*/
-/* USER CODE BEGIN EM */
+    /* Exported constants --------------------------------------------------------*/
+    /* USER CODE BEGIN EC */
 
-/* USER CODE END EM */
+    /* USER CODE END EC */
 
-/* Exported functions prototypes ---------------------------------------------*/
-void Error_Handler(void);
+    /* Exported macro ------------------------------------------------------------*/
+    /* USER CODE BEGIN EM */
+
+    /* USER CODE END EM */
+
+    /* Exported functions prototypes ---------------------------------------------*/
+    void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
@@ -92,30 +104,30 @@ void Error_Handler(void);
 #define KEY_DOWN_Pin GPIO_PIN_9
 #define KEY_DOWN_GPIO_Port GPIOB
 
-/* USER CODE BEGIN Private defines */
-void usb_printf(const char *format, ...);
+    /* USER CODE BEGIN Private defines */
+    void usb_printf(const char *format, ...);
 
-void gpio_usb_ctrl_on(void);
-void gpio_usb_ctrl_off(void);
-void gpio_led_tx_on(void);
-void gpio_led_tx_off(void);
-void gpio_led_rx_on(void);
-void gpio_led_rx_off(void);
-void buzzer_on(void);
-void buzzer_off(void);
-void buzzer_button_push(void);
+    void gpio_usb_ctrl_on(void);
+    void gpio_usb_ctrl_off(void);
+    void gpio_led_tx_on(void);
+    void gpio_led_tx_off(void);
+    void gpio_led_rx_on(void);
+    void gpio_led_rx_off(void);
+    void buzzer_on(void);
+    void buzzer_off(void);
+    void buzzer_button_push(void);
 
-bool key_check_press( key_name_t name );
-void key_set_continue( key_name_t name , bool enable );
-void key_timer_1ms_interrupt_callback(void);
+    bool key_check_press(key_name_t name);
+    void key_set_continue(key_name_t name, bool enable);
+    void key_timer_1ms_interrupt_callback(void);
 
-void e22_demo_init( void );
-void e22_demo_menu_config( menu_config_t *config );
-void e22_demo_transmit( uint8_t *buffer , uint8_t length );
-void e22_demo_receive( void );
-void e22_demo_dio1_interrupt_callback(void);
-bool e22_demo_check_rx_done( uint8_t *buffer, uint8_t * length  , int8_t *rssi);
-/* USER CODE END Private defines */
+    void e22_demo_init(void);
+    void e22_demo_menu_config(menu_config_t *config);
+    void e22_demo_transmit(uint8_t *buffer, uint8_t length);
+    void e22_demo_receive(void);
+    void e22_demo_dio1_interrupt_callback(void);
+    bool e22_demo_check_rx_done(uint8_t *buffer, uint8_t *length, int8_t *rssi);
+    /* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }

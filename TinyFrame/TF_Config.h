@@ -36,9 +36,6 @@
 //  | 数据 (DATA) | 可变   | 实际的消息负载，长度由 LEN 字段指定                                                                                 |
 //  | 数据校验和  | 0-4    | 对 DATA 部分的校验和，用于验证数据完整性                                                                            |
 
-
-
-
 // !!! 通信双方必须使用相同的配置 !!!
 
 // 根据需要调整大小 (1,2,4)
@@ -88,7 +85,7 @@ typedef uint8_t TF_COUNT;
 #define TF_PARSER_TIMEOUT_TICKS 10
 
 // 是否使用互斥锁 - 需要你实现 TF_ClaimTx() 和 TF_ReleaseTx()
-#define TF_USE_MUTEX 1
+#define TF_USE_MUTEX 0
 
 // 错误报告函数。要禁用调试，改为空定义
 #define TF_Error(format, ...) printf("[TF] " format "\n", ##__VA_ARGS__)
