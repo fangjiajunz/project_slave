@@ -677,7 +677,7 @@ sx126x_status_t sx126x_set_lora_mod_params( const void* context, const sx126x_mo
 
     if( status == SX126X_STATUS_OK )
     {
-        // WORKAROUND - Modulation Quality with 500 kHz LoRa Bandwidth, see datasheet DS_SX1261-2_V1.2 §15.1
+        // WORKAROUND - Modulation Quality with 500 kHz LoRa Bandwidth, see datasheet DS_SX1261-2_V1.2 ┬º15.1
         status = sx126x_tx_modulation_workaround( context, SX126X_PKT_TYPE_LORA, params->bw );
         // WORKAROUND END
     }
@@ -741,7 +741,7 @@ sx126x_status_t sx126x_set_lora_pkt_params( const void* context, const sx126x_pk
     sx126x_status_t status =
         ( sx126x_status_t ) sx126x_hal_write( context, buf, SX126X_SIZE_SET_PKT_PARAMS_LORA, 0, 0 );
 
-    // WORKAROUND - Optimizing the Inverted IQ Operation, see datasheet DS_SX1261-2_V1.2 §15.4
+    // WORKAROUND - Optimizing the Inverted IQ Operation, see datasheet DS_SX1261-2_V1.2 ┬º15.4
     if( status == SX126X_STATUS_OK )
     {
         uint8_t reg_value = 0;

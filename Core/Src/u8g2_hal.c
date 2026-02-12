@@ -14,7 +14,7 @@ static uint8_t u8x8_byte_hw_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void
         case U8X8_MSG_BYTE_SEND:
             while( arg_int-- > 0 ) {
 
-								///@todo 修改
+								///@todo 淇敼
 								/* ==================================== */
 								I2C2->DR = *data++;
 								while( __HAL_I2C_GET_FLAG(&hi2c2, I2C_FLAG_TXE) == RESET );
@@ -29,7 +29,7 @@ static uint8_t u8x8_byte_hw_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void
             break;
         case U8X8_MSG_BYTE_START_TRANSFER:
 					
-						///@todo 修改
+						///@todo 淇敼
 						/* ==================================== */
 						/* Wait until BUSY flag is reset */
             while( __HAL_I2C_GET_FLAG( &hi2c2, I2C_FLAG_BUSY ) == SET );
@@ -52,7 +52,7 @@ static uint8_t u8x8_byte_hw_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void
             break;
         case U8X8_MSG_BYTE_END_TRANSFER:
 					
-						///@todo 修改
+						///@todo 淇敼
 						/* ==================================== */            
 						/* Generate Stop */
 						SET_BIT( I2C2->CR1, I2C_CR1_STOP );
@@ -111,7 +111,7 @@ void u8g2Init(u8g2_t *u8g2)
 {
 
 	#ifdef HARDWARE_I2C
-//    HardWare_I2C2_GPIOInit();//已在i2c.c内完成初始化
+//    HardWare_I2C2_GPIOInit();//宸插湪i2c.c鍐呭畬鎴愬垵濮嬪寲
     u8g2_Setup_ssd1306_i2c_128x64_noname_f(u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw);
   #endif 
      

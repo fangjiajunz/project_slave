@@ -39,10 +39,10 @@ bool key_check_press( key_name_t name )
 {
 	bool ret = false;
 	
-	/* ÉÏ²ã»á³ÖĞø²éÑ¯×´Ì¬£¬¸ø³öµ±Ç°×´Ì¬ */
+	/* ä¸Šå±‚ä¼šæŒç»­æŸ¥è¯¢çŠ¶æ€ï¼Œç»™å‡ºå½“å‰çŠ¶æ€ */
 	ret = key_group[name].is_press;
 	
-	/* ÖØÖÃflash£¬½ûÖ¹¶ş´Î´¥·¢ */
+	/* é‡ç½®flashï¼Œç¦æ­¢äºŒæ¬¡è§¦å‘ */
 	key_group[name].is_press = false;
 	
 	return ret;
@@ -57,27 +57,27 @@ static inline void key_press( key_name_t name )
 {
 	key_group[name].count ++;
 
-	/* Èç¹û¶Ì°´³¬¹ıÅĞ¶¨Ê±¼ä */
+	/* å¦‚æœçŸ­æŒ‰è¶…è¿‡åˆ¤å®šæ—¶é—´ */
 	if( key_group[name].count > KEY_SHORT_PRESS_TIME_MS )
 	{
-		/* Èç¹û½ûÖ¹Á¬Ğø°´ÏÂÅĞ¶¨ */
+		/* å¦‚æœç¦æ­¢è¿ç»­æŒ‰ä¸‹åˆ¤å®š */
 		if( key_group[name].continue_enable == false )
 		{
-				/* ½öÔÚµÚÒ»´Î¶Ì°´ÏÂ´¥·¢ÅĞ¶¨ */
+				/* ä»…åœ¨ç¬¬ä¸€æ¬¡çŸ­æŒ‰ä¸‹è§¦å‘åˆ¤å®š */
 				if( key_group[name].is_continue == false )
 				{
-					/* ½ûÖ¹ÏÂ´Î´¥·¢ Ö±µ½°´¼üÊÍ·Å ÖØĞÂfalse*/
+					/* ç¦æ­¢ä¸‹æ¬¡è§¦å‘ ç›´åˆ°æŒ‰é”®é‡Šæ”¾ é‡æ–°false*/
 					key_group[name].is_continue = true;
-					/* µÚÒ»´Î¸ø³ö°´ÏÂ±êÊ¶ */
+					/* ç¬¬ä¸€æ¬¡ç»™å‡ºæŒ‰ä¸‹æ ‡è¯† */
 					key_group[name].is_press = true;
 				}			
 		}
-		/* Èç¹ûÔÊĞíÁ¬Ğø°´ÏÂÅĞ¶¨ */
+		/* å¦‚æœå…è®¸è¿ç»­æŒ‰ä¸‹åˆ¤å®š */
 		else
 		{
-				/* Á¬Ğø¸ø³ö°´ÏÂ±êÊ¶ */
+				/* è¿ç»­ç»™å‡ºæŒ‰ä¸‹æ ‡è¯† */
 				key_group[name].is_press = true;
-				/* ÖØĞÂ¼ÆÊ± */
+				/* é‡æ–°è®¡æ—¶ */
 				key_group[name].count = 0;
 		}
 	}

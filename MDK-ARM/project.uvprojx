@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../USB_DEVICE/App;../USB_DEVICE/Target;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Drivers/sx126x_driver/src;../Middlewares/u8g2Lib/inc;../Middlewares/MultMenu/application;../Middlewares/MultMenu/disp;../Middlewares/MultMenu/menu</IncludePath>
+              <IncludePath>../Core/Inc;../USB_DEVICE/App;../USB_DEVICE/Target;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Drivers/sx126x_driver/src;../Middlewares/u8g2Lib/inc;../Middlewares/MultMenu/application;../Middlewares/MultMenu/disp;../Middlewares/MultMenu/menu;..\user</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -924,6 +924,51 @@
               <FileName>TinyFrame.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\TinyFrame\TinyFrame.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>user</GroupName>
+          <Files>
+            <File>
+              <FileName>byte_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\byte_queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>byte_queue.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\byte_queue.h</FilePath>
+            </File>
+            <File>
+              <FileName>crc16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\crc16.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc16.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\crc16.h</FilePath>
+            </File>
+            <File>
+              <FileName>heap_4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\heap_4.c</FilePath>
+            </File>
+            <File>
+              <FileName>heap_4.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\heap_4.h</FilePath>
+            </File>
+            <File>
+              <FileName>usb_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\usb_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\usb_uart.h</FilePath>
             </File>
           </Files>
         </Group>

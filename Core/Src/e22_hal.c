@@ -1,125 +1,125 @@
 #include "sx126x_hal.h"
 
 /**
- * Óëµ¥Æ¬»úÆ½Ì¨ÓĞ¹Ø
+ * ä¸å•ç‰‡æœºå¹³å°æœ‰å…³
  */
 #include "gpio.h"
 #include "spi.h"
 
 /**
- * @brief Ä£×é¸´Î»
+ * @brief æ¨¡ç»„å¤ä½
  *
- * @param context Ä£×éÉÏÏÂÎÄ¡£½öÊÊÅäµ¥¸öÄ£×éÊ±¿ÉÒÔ²»´¦Àí
+ * @param context æ¨¡ç»„ä¸Šä¸‹æ–‡ã€‚ä»…é€‚é…å•ä¸ªæ¨¡ç»„æ—¶å¯ä»¥ä¸å¤„ç†
  */
 sx126x_hal_status_t sx126x_hal_reset( const void* context )
 {
-		/* E22 RESET Òı½ÅÏÈÀ­µÍ ´¥·¢¸´Î»*/
+		/* E22 RESET å¼•è„šå…ˆæ‹‰ä½ è§¦å‘å¤ä½*/
 		HAL_GPIO_WritePin( E22_RESET_GPIO_Port, E22_RESET_Pin, GPIO_PIN_RESET );
 	
-		/* ÑÓ³Ù1ms */
+		/* å»¶è¿Ÿ1ms */
 		HAL_Delay(1);
 	
-		/* E22 RESET Òı½ÅÔÙÀ­¸ß »Ö¸´Õı³£*/
+		/* E22 RESET å¼•è„šå†æ‹‰é«˜ æ¢å¤æ­£å¸¸*/
 		HAL_GPIO_WritePin( E22_RESET_GPIO_Port, E22_RESET_Pin, GPIO_PIN_SET );
 
     return SX126X_HAL_STATUS_OK;
 }
 
 /**
- * @brief Ã¦×´Ì¬µÈ´ı
+ * @brief å¿™çŠ¶æ€ç­‰å¾…
  *
- * @param radio Ä£×éÉÏÏÂÎÄ¡£½öÊÊÅäµ¥¸öÄ£×éÊ±¿ÉÒÔ²»´¦Àí
+ * @param radio æ¨¡ç»„ä¸Šä¸‹æ–‡ã€‚ä»…é€‚é…å•ä¸ªæ¨¡ç»„æ—¶å¯ä»¥ä¸å¤„ç†
  */
 void sx126x_hal_wait_on_busy( const void* radio )
 {
-		/* E22 BUSY Òı½Å¸ßµçÆ½±íÊ¾Ã¦ ĞèÒªµÈ´ı */
+		/* E22 BUSY å¼•è„šé«˜ç”µå¹³è¡¨ç¤ºå¿™ éœ€è¦ç­‰å¾… */
 		while( GPIO_PIN_SET == HAL_GPIO_ReadPin( E22_BUSY_GPIO_Port , E22_BUSY_Pin ) );
 }
 
 /**
- * @brief Ä£×é»½ĞÑ
+ * @brief æ¨¡ç»„å”¤é†’
  *
- * @param context Ä£×éÉÏÏÂÎÄ¡£½öÊÊÅäµ¥¸öÄ£×éÊ±¿ÉÒÔ²»´¦Àí
- * @return ·µ»Ø SX126X_HAL_STATUS_OK
+ * @param context æ¨¡ç»„ä¸Šä¸‹æ–‡ã€‚ä»…é€‚é…å•ä¸ªæ¨¡ç»„æ—¶å¯ä»¥ä¸å¤„ç†
+ * @return è¿”å› SX126X_HAL_STATUS_OK
  */
 sx126x_hal_status_t sx126x_hal_wakeup( const void* context )
 {
-		/* E22 SPI CS(NSS) Òı½ÅÏÈÀ­µÍ ´¥·¢»½ĞÑ*/
+		/* E22 SPI CS(NSS) å¼•è„šå…ˆæ‹‰ä½ è§¦å‘å”¤é†’*/
     HAL_GPIO_WritePin( SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
 
-		/* ÑÓ³Ù1ms */
+		/* å»¶è¿Ÿ1ms */
 		HAL_Delay(1);
 	
-		/* E22 SPI CS(NSS) Òı½ÅÔÙÀ­¸ß »Ö¸´Õı³£*/
+		/* E22 SPI CS(NSS) å¼•è„šå†æ‹‰é«˜ æ¢å¤æ­£å¸¸*/
 		HAL_GPIO_WritePin( SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET );
 
     return SX126X_HAL_STATUS_OK;
 }
 
 /**
- * @brief ¼Ä´æÆ÷Ğ´Èë
+ * @brief å¯„å­˜å™¨å†™å…¥
  *
- * @param context Ä£×éÉÏÏÂÎÄ¡£½öÊÊÅäµ¥¸öÄ£×éÊ±¿ÉÒÔ²»´¦Àí
- * @param command Ö¸ÏòÖ¸ÁîÄÚÈİ£¬Ò»°ãÎª¼Ä´æÆ÷µØÖ·
- * @param command_length Ö¸Áî³¤¶È
- * @param data Ö¸ÏòÊı¾İÄÚÈİ£¬Ò»°ãÎªÄ¿±ê¼Ä´æÆ÷Á¬ĞøĞ´ÈëÊı¾İ
- * @param data_length Êı¾İ³¤¶È
- * @return ·µ»Ø SX126X_HAL_STATUS_OK
+ * @param context æ¨¡ç»„ä¸Šä¸‹æ–‡ã€‚ä»…é€‚é…å•ä¸ªæ¨¡ç»„æ—¶å¯ä»¥ä¸å¤„ç†
+ * @param command æŒ‡å‘æŒ‡ä»¤å†…å®¹ï¼Œä¸€èˆ¬ä¸ºå¯„å­˜å™¨åœ°å€
+ * @param command_length æŒ‡ä»¤é•¿åº¦
+ * @param data æŒ‡å‘æ•°æ®å†…å®¹ï¼Œä¸€èˆ¬ä¸ºç›®æ ‡å¯„å­˜å™¨è¿ç»­å†™å…¥æ•°æ®
+ * @param data_length æ•°æ®é•¿åº¦
+ * @return è¿”å› SX126X_HAL_STATUS_OK
  */
 sx126x_hal_status_t sx126x_hal_write( const void* context, const uint8_t* command, const uint16_t command_length, const uint8_t* data, const uint16_t data_length )
 {
-		/* E22 µÈ´ı¿ÕÏĞ */
+		/* E22 ç­‰å¾…ç©ºé—² */
 		sx126x_hal_wait_on_busy( context );
 	
-		/* E22 SPI CS(NSS) Òı½ÅÏÈÀ­µÍ Ñ¡ÖĞ */
+		/* E22 SPI CS(NSS) å¼•è„šå…ˆæ‹‰ä½ é€‰ä¸­ */
     HAL_GPIO_WritePin( SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);	
 	
-	  /* SPI ÏÈ·¢ËÍÃüÁî */
+	  /* SPI å…ˆå‘é€å‘½ä»¤ */
 		HAL_SPI_Transmit( &hspi1 , (uint8_t*)command, command_length, 0xFFFF );
 	
-	  /* SPI ÔÙ·¢ËÍÊı¾İ */
+	  /* SPI å†å‘é€æ•°æ® */
 		HAL_SPI_Transmit( &hspi1 , (uint8_t*)data, data_length, 0xFFFF );		
 
-		/* E22 SPI CS(NSS) Òı½ÅÔÙÀ­¸ß ½áÊø */
+		/* E22 SPI CS(NSS) å¼•è„šå†æ‹‰é«˜ ç»“æŸ */
 		HAL_GPIO_WritePin( SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET );	
 	
     return SX126X_HAL_STATUS_OK;
 }
 
 /**
- * @brief ¼Ä´æÆ÷¶ÁÈ¡
+ * @brief å¯„å­˜å™¨è¯»å–
  *
- * @param context Ä£×éÉÏÏÂÎÄ¡£½öÊÊÅäµ¥¸öÄ£×éÊ±¿ÉÒÔ²»´¦Àí
- * @param command Ö¸ÏòÖ¸ÁîÄÚÈİ£¬Ò»°ãÎª¼Ä´æÆ÷µØÖ·
- * @param command_length Ö¸Áî³¤¶È
- * @param data Ö¸Ïò´ı¶ÁÈ¡Êı¾İ»º´æ
- * @param data_length Ô¤ÆÚ¶ÁÈ¡³¤¶È
- * @return ·µ»Ø SX126X_HAL_STATUS_OK
+ * @param context æ¨¡ç»„ä¸Šä¸‹æ–‡ã€‚ä»…é€‚é…å•ä¸ªæ¨¡ç»„æ—¶å¯ä»¥ä¸å¤„ç†
+ * @param command æŒ‡å‘æŒ‡ä»¤å†…å®¹ï¼Œä¸€èˆ¬ä¸ºå¯„å­˜å™¨åœ°å€
+ * @param command_length æŒ‡ä»¤é•¿åº¦
+ * @param data æŒ‡å‘å¾…è¯»å–æ•°æ®ç¼“å­˜
+ * @param data_length é¢„æœŸè¯»å–é•¿åº¦
+ * @return è¿”å› SX126X_HAL_STATUS_OK
  */
 sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command, const uint16_t command_length, uint8_t* data, const uint16_t data_length )
 {
-		/* E22 µÈ´ı¿ÕÏĞ */
+		/* E22 ç­‰å¾…ç©ºé—² */
 		sx126x_hal_wait_on_busy( context );
 	
-		/* E22 SPI CS(NSS) Òı½ÅÏÈÀ­µÍ Ñ¡ÖĞ */
-    HAL_GPIO_WritePin( SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);	
+		/* E22 SPI CS(NSS) å¼•è„šå…ˆæ‹‰ä½ é€‰ä¸­ */
+		HAL_GPIO_WritePin( SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);	
 	
-	  /* SPI ÏÈ·¢ËÍÃüÁî */
+		/* SPI å…ˆå‘é€å‘½ä»¤ */
 		HAL_SPI_Transmit( &hspi1 , (uint8_t*)command, command_length, 0xFFFF );
 	
-	  /* SPI ÔÙ¶ÁÈ¡ÏìÓ¦Êı¾İ */
+		/* SPI å†è¯»å–å“åº”æ•°æ® */
 		HAL_SPI_Receive( &hspi1 , (uint8_t*)data, data_length, 0xFFFF );		
 
-		/* E22 SPI CS(NSS) Òı½ÅÔÙÀ­¸ß ½áÊø */
+		/* E22 SPI CS(NSS) å¼•è„šå†æ‹‰é«˜ ç»“æŸ */
 		HAL_GPIO_WritePin( SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET );		
 
     return SX126X_HAL_STATUS_OK;
 }
 
 /**
- * @brief ÉäÆµ¿ª¹ØÇĞ»»µ½·¢ËÍÏßÂ·
+ * @brief å°„é¢‘å¼€å…³åˆ‡æ¢åˆ°å‘é€çº¿è·¯
  *
- * @return ·µ»Ø SX126X_HAL_STATUS_OK
+ * @return è¿”å› SX126X_HAL_STATUS_OK
  */
 sx126x_hal_status_t sx126x_rf_switch_tx(void)
 {
@@ -130,9 +130,9 @@ sx126x_hal_status_t sx126x_rf_switch_tx(void)
 }
 
 /**
- * @brief ÉäÆµ¿ª¹ØÇĞ»»µ½½ÓÊÕÏßÂ·
+ * @brief å°„é¢‘å¼€å…³åˆ‡æ¢åˆ°æ¥æ”¶çº¿è·¯
  *
- * @return ·µ»Ø SX126X_HAL_STATUS_OK
+ * @return è¿”å› SX126X_HAL_STATUS_OK
  */
 sx126x_hal_status_t sx126x_rf_switch_rx(void)
 {

@@ -6,7 +6,7 @@
 #include "sx126x_hal.h"
 
 /**
- * Ä£×é»ù±¾²ÎÊı¶¨Òå
+ * æ¨¡ç»„åŸºæœ¬å‚æ•°å®šä¹‰
  */
 // typedef struct
 // {
@@ -18,7 +18,7 @@
 // }context_e22_t;
 
 /**
- * Ä£×éÄ¬ÈÏÅäÖÃ
+ * æ¨¡ç»„é»˜è®¤é…ç½®
  */
 context_e22_t context_e22 = {
     .is_tx = false,
@@ -27,7 +27,7 @@ context_e22_t context_e22 = {
 };
 
 /**
- * Ä£×éPAÄ¬ÈÏÅäÖÃ
+ * æ¨¡ç»„PAé»˜è®¤é…ç½®
  */
 static sx126x_pa_cfg_params_t pa_cfg = {
     .pa_duty_cycle = 0x04,
@@ -37,7 +37,7 @@ static sx126x_pa_cfg_params_t pa_cfg = {
 };
 
 /**
- * Ä£×éLoRaµ÷ÖÆÄ¬ÈÏÅäÖÃ
+ * æ¨¡ç»„LoRaè°ƒåˆ¶é»˜è®¤é…ç½®
  */
 static sx126x_mod_params_lora_t mod_cfg = {
     .sf = SX126X_LORA_SF11,    //!< LoRa Spreading Factor
@@ -47,7 +47,7 @@ static sx126x_mod_params_lora_t mod_cfg = {
 };
 
 /**
- * Ä£×éÊı¾İ°ü½á¹¹Ä¬ÈÏÅäÖÃ
+ * æ¨¡ç»„æ•°æ®åŒ…ç»“æ„é»˜è®¤é…ç½®
  */
 static sx126x_pkt_params_lora_t pkt_cfg = {
     .preamble_len_in_symb = 8,                //!< Preamble length in symbols
@@ -58,33 +58,33 @@ static sx126x_pkt_params_lora_t pkt_cfg = {
 };
 
 /**
- * @brief  (¿ÉÑ¡µÄ)Ä£×éSPI¶ÁĞ´²âÊÔ
+ * @brief  (å¯é€‰çš„)æ¨¡ç»„SPIè¯»å†™æµ‹è¯•
  *
- * @note Èç¹ûÊ§°ÜÁË£¬Çë¼ì²éµçÆøÁ´½Ó¡£Ò²¿ÉÒÔÏÈ¶Ì½ÓSPIµÄ MISO MOSI£¬ÏÈ²âÊÔ×Ô·¢×ÔÊÕÊÇ·ñÕıÈ·
+ * @note å¦‚æœå¤±è´¥äº†ï¼Œè¯·æ£€æŸ¥ç”µæ°”é“¾æ¥ã€‚ä¹Ÿå¯ä»¥å…ˆçŸ­æ¥SPIçš„ MISO MOSIï¼Œå…ˆæµ‹è¯•è‡ªå‘è‡ªæ”¶æ˜¯å¦æ­£ç¡®
  */
 static void e22_spi_check(void)
 {
     uint8_t temp = 0xA5;
 
-    /* Ğ´ÈëÒ»¸ö±ê¼Ç
-     0x06BB ¼Ä´æÆ÷Îª¿É¶Á¿ÉĞ´ÀàĞÍ
+    /* å†™å…¥ä¸€ä¸ªæ ‡è®°
+     0x06BB å¯„å­˜å™¨ä¸ºå¯è¯»å¯å†™ç±»å‹
      SX126X_REG_RXTX_PAYLOAD_LEN  */
     sx126x_write_register(&context_e22, 0x06BB, &temp, 1);
 
-    /* ¶Á»Ø */
+    /* è¯»å› */
     temp = 0;
     sx126x_read_register(&context_e22, 0x06BB, &temp, 1);
 
-    /* ±È½Ï */
+    /* æ¯”è¾ƒ */
     if (0xA5 != temp)
     {
-        /* Ò»°ãÊÇSPIÍ¨ĞÅÒì³£ Çë¼ì²é½ÓÏß */
+        /* ä¸€èˆ¬æ˜¯SPIé€šä¿¡å¼‚å¸¸ è¯·æ£€æŸ¥æ¥çº¿ */
         while (1);
     }
 }
 
 /**
- * @brief  (¿ÉÑ¡µÄ)Ä£×é¾§ÕñÆô¶¯²âÊÔ
+ * @brief  (å¯é€‰çš„)æ¨¡ç»„æ™¶æŒ¯å¯åŠ¨æµ‹è¯•
  */
 static void e22_xosc_check(void)
 {
@@ -98,94 +98,94 @@ static void e22_xosc_check(void)
 
     if (error_info & SX126X_ERRORS_XOSC_START)
     {
-        /* ¾§ÕñÎÊÌâÇë¼ì²éÄ£×éĞÍºÅ»òÓëÏúÊÛÁªÏµ
-         ²»Òª¸ã»ìÎŞÔ´¡¢ÓĞÔ´¾§ÕñÄ£×é */
+        /* æ™¶æŒ¯é—®é¢˜è¯·æ£€æŸ¥æ¨¡ç»„å‹å·æˆ–ä¸é”€å”®è”ç³»
+         ä¸è¦ææ··æ— æºã€æœ‰æºæ™¶æŒ¯æ¨¡ç»„ */
         while (1);
     }
 }
 
 /**
- * @brief  Ä£×é³õÊ¼»¯
+ * @brief  æ¨¡ç»„åˆå§‹åŒ–
  */
 void e22_demo_init(void)
 {
-    /* Ó²¼ş¸´Î» */
+    /* ç¡¬ä»¶å¤ä½ */
     sx126x_reset(&context_e22);
 
-    /* »½ĞÑ */
+    /* å”¤é†’ */
     sx126x_wakeup(&context_e22);
 
-    /* ÇĞ»»¹¤×÷×´Ì¬ */
+    /* åˆ‡æ¢å·¥ä½œçŠ¶æ€ */
     sx126x_set_standby(&context_e22, SX126X_STANDBY_CFG_RC);
 
-    /* (¿ÉÑ¡)»ù´¡SPI¼ì²é */
+    /* (å¯é€‰)åŸºç¡€SPIæ£€æŸ¥ */
     e22_spi_check();
 
-    /* ±£Áô¼Ä´æÆ÷ÉèÖÃ (¼õÉÙ»½ĞÑ»Ö¸´Ê±¼ä) */
+    /* ä¿ç•™å¯„å­˜å™¨è®¾ç½® (å‡å°‘å”¤é†’æ¢å¤æ—¶é—´) */
     sx126x_init_retention_list(&context_e22);
 
-    /* ÄÚ²¿µçÔ´Ä£Ê½ (DCDC¹¦ºÄ¸üĞ¡)*/
+    /* å†…éƒ¨ç”µæºæ¨¡å¼ (DCDCåŠŸè€—æ›´å°)*/
     sx126x_set_reg_mode(&context_e22, SX126X_REG_MODE_DCDC);
 
-    /* ½ûÖ¹DIO2ÇĞ»»ÉäÆµ¿ª¹Ø (¸ÃÆÀ¹À°åÓ²¼şÃ»ÓĞ½«E22Ä£×éµÄDIO2ÓëRXENÁ¬½Ó)	*/
+    /* ç¦æ­¢DIO2åˆ‡æ¢å°„é¢‘å¼€å…³ (è¯¥è¯„ä¼°æ¿ç¡¬ä»¶æ²¡æœ‰å°†E22æ¨¡ç»„çš„DIO2ä¸RXENè¿æ¥)	*/
     sx126x_set_dio2_as_rf_sw_ctrl(&context_e22, false);
 
-    /* ¿ªÆô¾§Õñ E22ÏµÁĞÎªÓĞÔ´ÎÂ²¹¾§Õñ(TCXO) */
+    /* å¼€å¯æ™¶æŒ¯ E22ç³»åˆ—ä¸ºæœ‰æºæ¸©è¡¥æ™¶æŒ¯(TCXO) */
     sx126x_set_dio3_as_tcxo_ctrl(&context_e22, SX126X_TCXO_CTRL_3_3V, 320);
 
-    /* ĞŞÕıÄÚ²¿×´Ì¬ */
+    /* ä¿®æ­£å†…éƒ¨çŠ¶æ€ */
     sx126x_cal(&context_e22, SX126X_CAL_ALL);
 
-    /* (¿ÉÑ¡)»ù´¡¾§Õñ¼ì²é */
+    /* (å¯é€‰)åŸºç¡€æ™¶æŒ¯æ£€æŸ¥ */
     e22_xosc_check();
 
-    /* Êı¾İ°üÀàĞÍ */
+    /* æ•°æ®åŒ…ç±»å‹ */
     sx126x_set_pkt_type(&context_e22, SX126X_PKT_TYPE_LORA);
 
-    /* ÔØ²¨ÆµÂÊ (915000000Hz = 915000KHz = 915MHz)*/
+    /* è½½æ³¢é¢‘ç‡ (915000000Hz = 915000KHz = 915MHz)*/
     sx126x_set_rf_freq(&context_e22, 915000000);
 
-    /* ÄÚ²¿PA²ÎÊı      (Çë²Î¿¼sx126x DatasheetÖĞµÄ 13.1.14 SetPaConfig)*/
+    /* å†…éƒ¨PAå‚æ•°      (è¯·å‚è€ƒsx126x Datasheetä¸­çš„ 13.1.14 SetPaConfig)*/
     sx126x_set_pa_cfg(&context_e22, &pa_cfg);
 
-    /* ·¢Éä¹¦ÂÊ 22dBm  (Çë²Î¿¼sx126x DatasheetÖĞµÄ 13.4.4 SetTxParams)*/
+    /* å‘å°„åŠŸç‡ 22dBm  (è¯·å‚è€ƒsx126x Datasheetä¸­çš„ 13.4.4 SetTxParams)*/
     sx126x_set_tx_params(&context_e22, 22, SX126X_RAMP_40_US);
 
-    /* Íê³ÉTX/RXºóµÄ¹¤×÷×´Ì¬ */
+    /* å®ŒæˆTX/RXåçš„å·¥ä½œçŠ¶æ€ */
     sx126x_set_rx_tx_fallback_mode(&context_e22, SX126X_FALLBACK_STDBY_RC);
 
-    /* ¹Ø±ÕÔöÇ¿½ÓÊÕ (¿ªÆô»áÔö¼Ó½ÓÊÕÁéÃô¶È£¬µ«¹¦ºÄ»áÔö¼Ó) */
+    /* å…³é—­å¢å¼ºæ¥æ”¶ (å¼€å¯ä¼šå¢åŠ æ¥æ”¶çµæ•åº¦ï¼Œä½†åŠŸè€—ä¼šå¢åŠ ) */
     sx126x_cfg_rx_boosted(&context_e22, false);
 
-    /* LORAµ÷ÖÆ²ÎÊı (Óë¿ÕÖĞËÙÂÊ¡¢½ÓÊÕÁéÃô¶ÈÓĞ¹ØÁª)
-     ¿ÉÒÔÊ¹ÓÃ¼ÆËãÆ÷	https://www.semtech.com/design-support/lora-calculator */
+    /* LORAè°ƒåˆ¶å‚æ•° (ä¸ç©ºä¸­é€Ÿç‡ã€æ¥æ”¶çµæ•åº¦æœ‰å…³è”)
+     å¯ä»¥ä½¿ç”¨è®¡ç®—å™¨	https://www.semtech.com/design-support/lora-calculator */
     sx126x_set_lora_mod_params(&context_e22, &mod_cfg);
 
-    /* LORAÊı¾İ°ü¸ñÊ½ */
+    /* LORAæ•°æ®åŒ…æ ¼å¼ */
     sx126x_set_lora_pkt_params(&context_e22, &pkt_cfg);
 
-    /* LORAÍ¬²½×Ö */
+    /* LORAåŒæ­¥å­— */
     sx126x_set_lora_sync_word(&context_e22, 0x14);
 }
 
 /**
- * @brief Ê¹ÓÃÏÔÊ¾²Ëµ¥ÓÃ»§ÅäÖÃ²ÎÊıÖØĞÂÅäÖÃÄ£×é
+ * @brief ä½¿ç”¨æ˜¾ç¤ºèœå•ç”¨æˆ·é…ç½®å‚æ•°é‡æ–°é…ç½®æ¨¡ç»„
  *
- * @param config ²Ëµ¥ÅäÖÃ²ÎÊıĞÅÏ¢
+ * @param config èœå•é…ç½®å‚æ•°ä¿¡æ¯
  */
 void e22_demo_menu_config(menu_config_t *config)
 {
-    /* ÇĞ»»¹¤×÷×´Ì¬ */
+    /* åˆ‡æ¢å·¥ä½œçŠ¶æ€ */
     sx126x_set_standby(&context_e22, SX126X_STANDBY_CFG_RC);
 
-    /* ÔØ²¨ÆµÂÊ HZ */
+    /* è½½æ³¢é¢‘ç‡ HZ */
     sx126x_set_rf_freq(&context_e22, config->frequency_mhz * 1000000);
 
-    /* ·¢Éä¹¦ÂÊ        (Çë²Î¿¼sx126x DatasheetÖĞµÄ 13.4.4 SetTxParams)*/
+    /* å‘å°„åŠŸç‡        (è¯·å‚è€ƒsx126x Datasheetä¸­çš„ 13.4.4 SetTxParams)*/
     sx126x_set_tx_params(&context_e22, (int8_t)(config->tx_power & 0xFF), SX126X_RAMP_40_US);
 
-    /* LORAµ÷ÖÆ²ÎÊı (Óë¿ÕÖĞËÙÂÊ¡¢½ÓÊÕÁéÃô¶ÈÓĞ¹ØÁª)
-     ¿ÉÒÔÊ¹ÓÃ¼ÆËãÆ÷	https://www.semtech.com/design-support/lora-calculator */
+    /* LORAè°ƒåˆ¶å‚æ•° (ä¸ç©ºä¸­é€Ÿç‡ã€æ¥æ”¶çµæ•åº¦æœ‰å…³è”)
+     å¯ä»¥ä½¿ç”¨è®¡ç®—å™¨	https://www.semtech.com/design-support/lora-calculator */
     mod_cfg.sf = (sx126x_lora_sf_t)config->lora_sf;
     switch (config->lora_bw)
     {
@@ -199,7 +199,7 @@ void e22_demo_menu_config(menu_config_t *config)
             mod_cfg.bw = SX126X_LORA_BW_125;
             break;
         default:
-            /* ĞèÒªĞŞ¸Ä Ôö¼Ó */
+            /* éœ€è¦ä¿®æ”¹ å¢åŠ  */
             while (1);
     }
     switch (config->lora_cr)
@@ -217,7 +217,7 @@ void e22_demo_menu_config(menu_config_t *config)
             mod_cfg.cr = SX126X_LORA_CR_4_8;
             break;
         default:
-            /* ²»Ö§³Ö */
+            /* ä¸æ”¯æŒ */
             while (1);
     }
 
@@ -225,74 +225,74 @@ void e22_demo_menu_config(menu_config_t *config)
 }
 
 /**
- * @brief ÏòÄ£×éĞ´ÈëÊı¾İ²¢¿ªÊ¼·¢Éä
+ * @brief å‘æ¨¡ç»„å†™å…¥æ•°æ®å¹¶å¼€å§‹å‘å°„
  *
- * @param buffer Ö¸ÏòÊı¾İ»º´æ
- * @param length Ğ´Èë³¤¶È
+ * @param buffer æŒ‡å‘æ•°æ®ç¼“å­˜
+ * @param length å†™å…¥é•¿åº¦
  */
 void e22_demo_transmit(uint8_t *buffer, uint8_t length)
 {
-    /* ·¢ËÍ³¤¶È */
+    /* å‘é€é•¿åº¦ */
     pkt_cfg.pld_len_in_bytes = length;
     sx126x_set_lora_pkt_params(&context_e22, &pkt_cfg);
 
-    /* Ğ´ÈëÄÚ²¿»º´æ */
+    /* å†™å…¥å†…éƒ¨ç¼“å­˜ */
     sx126x_write_buffer(&context_e22, 0x00, buffer, length);
 
-    /* ÔÊĞí·¢ËÍÍê³ÉÖĞ¶Ï£¬²¢Ó³Éäµ½Òı½ÅDIO1ÉÏ */
+    /* å…è®¸å‘é€å®Œæˆä¸­æ–­ï¼Œå¹¶æ˜ å°„åˆ°å¼•è„šDIO1ä¸Š */
     sx126x_set_dio_irq_params(&context_e22,
                               SX126X_IRQ_TX_DONE, /* irq_mask */
                               SX126X_IRQ_TX_DONE, /* dio1_mask */
                               SX126X_IRQ_NONE,    /* dio2_mask */
                               SX126X_IRQ_NONE);   /* dio3_mask */
 
-    /* ÇåÖĞ¶Ï×´Ì¬ */
+    /* æ¸…ä¸­æ–­çŠ¶æ€ */
     sx126x_clear_irq_status(&context_e22, SX126X_IRQ_ALL);
 
-    /* Ä£×éÄÚ²¿ÉäÆµ¿ª¹ØÇĞ»»µ½·¢ËÍ×´Ì¬ */
+    /* æ¨¡ç»„å†…éƒ¨å°„é¢‘å¼€å…³åˆ‡æ¢åˆ°å‘é€çŠ¶æ€ */
     sx126x_rf_switch_tx();
 
-    /* ¿ªÊ¼·¢ËÍÊı¾İ */
+    /* å¼€å§‹å‘é€æ•°æ® */
     sx126x_set_tx(&context_e22, 0x00);
 
-    /* ÉèÖÃ·¢ËÍ±ê¼Ç */
+    /* è®¾ç½®å‘é€æ ‡è®° */
     context_e22.is_tx = true;
 
-    /* (¿ÉÑ¡) LED TXÖ¸Ê¾ */
+    /* (å¯é€‰) LED TXæŒ‡ç¤º */
     gpio_led_tx_on();
 }
 
 /**
- * @brief  Ä£×éÇĞ»»µ½³ÖĞø½ÓÊÕ×´Ì¬
+ * @brief  æ¨¡ç»„åˆ‡æ¢åˆ°æŒç»­æ¥æ”¶çŠ¶æ€
  */
 void e22_demo_receive(void)
 {
-    /* ½ÓÊÕ³¤¶È ×î´ó255 */
+    /* æ¥æ”¶é•¿åº¦ æœ€å¤§255 */
     pkt_cfg.pld_len_in_bytes = 255;
     sx126x_set_lora_pkt_params(&context_e22, &pkt_cfg);
 
-    /* ÔÊĞí½ÓÊÕÍê³ÉÖĞ¶ÏÓëÇ°µ¼Âë¼ì²âÖĞ¶Ï£¬²¢Ó³Éäµ½Òı½ÅDIO1ÉÏ */
+    /* å…è®¸æ¥æ”¶å®Œæˆä¸­æ–­ä¸å‰å¯¼ç æ£€æµ‹ä¸­æ–­ï¼Œå¹¶æ˜ å°„åˆ°å¼•è„šDIO1ä¸Š */
     sx126x_set_dio_irq_params(&context_e22,
                               SX126X_IRQ_RX_DONE | SX126X_IRQ_PREAMBLE_DETECTED,
                               SX126X_IRQ_RX_DONE | SX126X_IRQ_PREAMBLE_DETECTED,
                               SX126X_IRQ_NONE,
                               SX126X_IRQ_NONE);
-    /* ÇåÖĞ¶Ï×´Ì¬ */
+    /* æ¸…ä¸­æ–­çŠ¶æ€ */
     sx126x_clear_irq_status(&context_e22, SX126X_IRQ_ALL);
 
-    /* Ä£×éÄÚ²¿ÉäÆµ¿ª¹ØÇĞ»»µ½½ÓÊÕ×´Ì¬ */
+    /* æ¨¡ç»„å†…éƒ¨å°„é¢‘å¼€å…³åˆ‡æ¢åˆ°æ¥æ”¶çŠ¶æ€ */
     sx126x_rf_switch_rx();
 
-    /* ½øÈë½ÓÊÕ×´Ì¬£¬µÈ´ıÊı¾İ */
+    /* è¿›å…¥æ¥æ”¶çŠ¶æ€ï¼Œç­‰å¾…æ•°æ® */
     sx126x_set_rx(&context_e22, 0);
 }
 
 /**
- * @brief  ²éÑ¯ÊÇ·ñÓĞ½ÓÊÕÊı¾İ
+ * @brief  æŸ¥è¯¢æ˜¯å¦æœ‰æ¥æ”¶æ•°æ®
  *
- * @param   buffer Ö¸Ïò´ı¿½±´Êı¾İ»º´æ
- * @param   length ½ÓÊÕÊı¾İ³¤¶È
- * @return  bool ÓĞĞÂ½ÓÊÕÊı¾İÔò·µ»Øtrue; ·ñÔò·µ»Øfalse¡£
+ * @param   buffer æŒ‡å‘å¾…æ‹·è´æ•°æ®ç¼“å­˜
+ * @param   length æ¥æ”¶æ•°æ®é•¿åº¦
+ * @return  bool æœ‰æ–°æ¥æ”¶æ•°æ®åˆ™è¿”å›true; å¦åˆ™è¿”å›falseã€‚
  */
 bool e22_demo_check_rx_done(uint8_t *buffer, uint8_t *length, int8_t *rssi)
 {
@@ -317,9 +317,9 @@ bool e22_demo_check_rx_done(uint8_t *buffer, uint8_t *length, int8_t *rssi)
 }
 
 /**
- * @brief  Ä£×éÒı½ÅÖĞ¶ÏÏìÓ¦
+ * @brief  æ¨¡ç»„å¼•è„šä¸­æ–­å“åº”
  *
- * @note ÓëÊÕ·¢º¯ÊıÄÚµÄÖĞ¶ÏÅäÖÃ¹ØÁª£¬Ä¬ÈÏ½öÊµÏÖÁË·¢ËÍÍê³ÉÓë½ÓÊÕÍê³É
+ * @note ä¸æ”¶å‘å‡½æ•°å†…çš„ä¸­æ–­é…ç½®å…³è”ï¼Œé»˜è®¤ä»…å®ç°äº†å‘é€å®Œæˆä¸æ¥æ”¶å®Œæˆ
  */
 void e22_demo_dio1_interrupt_callback(void)
 {
@@ -327,59 +327,59 @@ void e22_demo_dio1_interrupt_callback(void)
     sx126x_rx_buffer_status_t buffer_status;
     sx126x_pkt_status_lora_t pkt_status;
 
-    /* ¶ÁÈ¡ÖĞ¶Ï×´Ì¬ */
+    /* è¯»å–ä¸­æ–­çŠ¶æ€ */
     sx126x_get_irq_status(&context_e22, &irq_mask);
 
-    /* Èç¹ûÓĞÖĞ¶Ï±êÊ¶ */
+    /* å¦‚æœæœ‰ä¸­æ–­æ ‡è¯† */
     if (irq_mask != SX126X_IRQ_NONE)
     {
-        /* Çå³ıÖĞ¶Ï±êÊ¶ */
+        /* æ¸…é™¤ä¸­æ–­æ ‡è¯† */
         sx126x_clear_irq_status(&context_e22, irq_mask);
 
         //================================================================================
-        /* ÖĞ¶Ï£º¼ì²éµ½ÁËÇ°µ¼Âë */
+        /* ä¸­æ–­ï¼šæ£€æŸ¥åˆ°äº†å‰å¯¼ç  */
         if (irq_mask & SX126X_IRQ_PREAMBLE_DETECTED)
         {
         }
 
         //================================================================================
-        /* ÖĞ¶Ï£º½ÓÊÕÍê³É */
+        /* ä¸­æ–­ï¼šæ¥æ”¶å®Œæˆ */
         if (irq_mask & SX126X_IRQ_RX_DONE)
         {
             sx126x_get_rx_buffer_status(&context_e22, &buffer_status);
 
             if (buffer_status.pld_len_in_bytes != 0)
             {
-                /* ÏÈ»ñÈ¡½ÓÊÕÊı¾İ³¤¶ÈÓë»º´æÆ«ÒÆÎ»ÖÃ */
+                /* å…ˆè·å–æ¥æ”¶æ•°æ®é•¿åº¦ä¸ç¼“å­˜åç§»ä½ç½® */
                 sx126x_get_lora_pkt_status(&context_e22, &pkt_status);
 
-                /* ½«SX126XÄÚ²¿»º´æÊı¾İ¶Á³ö */
+                /* å°†SX126Xå†…éƒ¨ç¼“å­˜æ•°æ®è¯»å‡º */
                 sx126x_read_buffer(&context_e22, buffer_status.buffer_start_pointer, context_e22.rx_buffer, buffer_status.pld_len_in_bytes);
 
-                /* ¼ÇÂ¼½ÓÊÕ³¤¶È */
+                /* è®°å½•æ¥æ”¶é•¿åº¦ */
                 context_e22.rx_length = buffer_status.pld_len_in_bytes;
 
                 /* RSSI */
                 context_e22.rx_rssi = pkt_status.rssi_pkt_in_dbm;
 
-                /* ±ê¼Ç½ÓÊÕ */
+                /* æ ‡è®°æ¥æ”¶ */
                 context_e22.is_rx = true;
 
-                /* (¿ÉÑ¡) LED RXÖ¸Ê¾ */
+                /* (å¯é€‰) LED RXæŒ‡ç¤º */
                 gpio_led_rx_on();
             }
 
-            /* ÖØĞÂ½øÈë½ÓÊÕ×´Ì¬ */
+            /* é‡æ–°è¿›å…¥æ¥æ”¶çŠ¶æ€ */
             e22_demo_receive();
         }
         //================================================================================
-        /* ÖĞ¶Ï£º·¢ËÍÍê³É */
+        /* ä¸­æ–­ï¼šå‘é€å®Œæˆ */
         if (irq_mask & SX126X_IRQ_TX_DONE)
         {
-            /* Çå³ı·¢ËÍ±ê¼Ç */
+            /* æ¸…é™¤å‘é€æ ‡è®° */
             context_e22.is_tx = false;
 
-            /* (¿ÉÑ¡) LED TXÖ¸Ê¾ */
+            /* (å¯é€‰) LED TXæŒ‡ç¤º */
             gpio_led_tx_off();
         }
     }
