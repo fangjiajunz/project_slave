@@ -1,0 +1,88 @@
+/**
+ * @file    tf_master.h
+ * @brief   TinyFrame 主机端模块
+ */
+
+#ifndef TF_MASTER_H
+#define TF_MASTER_H
+
+#include "tf_multinode.h"
+#include "TinyFrame.h"
+
+/* ========================== 配置 ========================== */
+
+/* 等待从机响应的超时时间 (ticks) */
+#define TF_MASTER_RESPONSE_TIMEOUT  100
+
+/* ========================== API 函数 ========================== */
+
+/**
+ * @brief  初始化主机端 TinyFrame
+ * @param  tf: TinyFrame 实例
+ * @return 成功返回 true
+ */
+bool TF_Master_Init(TinyFrame *tf);
+
+/**
+ * @brief  发送消息到指定从机
+ * @param  tf:        TinyFrame 实例
+ * @param  slave_addr: 目标从机地址 (1-14)
+ * @param  msg_type:  消息类型
+ * @param  data:      数据负载 (可为 NULL)
+ * @param  len:       数据长度
+ * @return 成功返回 true
+ */
+bool TF_Master_SendTo(TinyFrame *tf, uint8_t slave_addr, TF_MsgType msg_type,
+                      const uint8_t *data, TF_LEN len);
+
+/**
+ * @brief  发送查询消息并等待响应
+ * @param  tf:        TinyFrame 实例
+ * @param  slave_addr: 目标从机地址 (1-14)
+ * @param  msg_type:  消息类型
+ * @param  data:      数据负载 (可为 NULL)
+ * @param  len:       数据长度
+ * @param  listener:  响应回调函数
+ * @return 成功返回 true
+ */
+bool TF_Master_QueryTo(TinyFrame *tf, uint8_t slave_addr, TF_MsgType msg_type,
+                       const uint8_t *data, TF_LEN len, TF_Listener listener);
+
+/**
+ * @brief  广播消息到所有从机 (无响应)
+ * @param  tf:       TinyFrame 实例
+ * @param  msg_type: 消息类型
+ * @param  data:     数据负载 (可为 NULL)
+ * @param  len:      数据长度
+ * @return 成功返回 true
+ */
+bool TF_Master_Broadcast(TinyFrame *tf, TF_MsgType msg_type,
+                         const uint8_t *data, TF_LEN len);
+
+/**
+ * @brief  发送 LED 控制命令到指定从机
+ * @param  tf:        TinyFrame 实例
+ * @param  slave_addr: 目标从机地址
+ * @param  led_cmd:   LED 命令 (LED_CMD_OFF/ON/TOGGLE)
+ * @return 成功返回 true
+ */
+bool TF_Master_SendLedCmd(TinyFrame *tf, uint8_t slave_addr, TF_LedCmd led_cmd);
+
+/**
+ * @brief  广播 LED 控制命令到所有从机
+ * @param  tf:      TinyFrame 实例
+ * @param  led_cmd: LED 命令
+ * @return 成功返回 true
+ */
+bool TF_Master_BroadcastLedCmd(TinyFrame *tf, TF_LedCmd led_cmd);
+
+/**
+ * @brief  发送心跳查询到指定从机
+ * @param  tf:        TinyFrame 实例
+ * @param  slave_addr: 目标从机地址
+ * @param  listener:  响应回调函数
+ * @return 成功返回 true
+ */
+bool TF_Master_SendHeartbeat(TinyFrame *tf, uint8_t slave_addr, TF_Listener listener);
+
+#endif /* TF_MASTER_H */

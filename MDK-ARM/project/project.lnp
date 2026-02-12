@@ -85,6 +85,8 @@
 "project\menu.o"
 "project\tf_integration.o"
 "project\tinyframe.o"
+"project\tf_master.o"
+"project\tf_slave.o"
 "project\byte_queue.o"
 "project\crc16.o"
 "project\heap_4.o"

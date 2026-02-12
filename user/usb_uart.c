@@ -1,11 +1,12 @@
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
 #include "byte_queue.h"
+#include <stdbool.h>
  
 
 /* USB CDC UART Configuration */
 #define CONFIG_UART_TX_SIZE 512
-#define CONFIG_UART_RX_SIZE 2048
+#define CONFIG_UART_RX_SIZE 512
 #define TX_CACHE_SIZE CONFIG_UART_TX_SIZE
 #define RX_CACHE_SIZE CONFIG_UART_RX_SIZE
 
@@ -29,7 +30,7 @@ void uart_deinit(void) {
 		return;
 	}
 	_b_inited = false;
-	MX_USB_DEVICE_DeInit();
+	// MX_USB_DEVICE_DeInit();  // 暂不支持
 }
 
 void uart_tx_poll(void) {
@@ -60,5 +61,4 @@ void uart_rx_poll(void) {
 
 void usb_uart_rx_handler(uint8_t *data, uint32_t len) {
 	byte_queue_write(&uart_rx_queue, data, len);
-	PRINT_INFO("len :%d\r\n",len);
 }

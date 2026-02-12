@@ -89,3 +89,21 @@ main() {
 - SX126X 驱动需要实现 HAL 层 (`sx126x_hal.h` 中声明的函数)
 - LoRa 默认参数: SF11, BW500, CR4/5, 915MHz, 22dBm
 - OLED 使用硬件 I2C (Fast Mode), 地址 0x78
+
+### USB CDC 虚拟串口
+
+**usb_printf 函数 (`USB_DEVICE/App/usbd_cdc_if.c`)**
+- `CDC_Transmit_FS()` 是非阻塞的，提交数据后立即返回
+- 连续快速调用可能导致数据丢失（新数据覆盖未发送完的缓冲区）
+- `TxState` 标志位指示传输状态：0=空闲，1=忙
+
+**安全发送方案**
+```c
+// 发送前等待上次传输完成
+USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
+uint32_t start = HAL_GetTick();
+while (hcdc->TxState != 0) {
+    if (HAL_GetTick() - start > 100) return;  // 超时保护
+}
+CDC_Transmit_FS(buf, len);
+```

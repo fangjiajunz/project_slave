@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../USB_DEVICE/App;../USB_DEVICE/Target;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Drivers/sx126x_driver/src;../Middlewares/u8g2Lib/inc;../Middlewares/MultMenu/application;../Middlewares/MultMenu/disp;../Middlewares/MultMenu/menu;..\user</IncludePath>
+              <IncludePath>../Core/Inc;../USB_DEVICE/App;../USB_DEVICE/Target;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Drivers/sx126x_driver/src;../Middlewares/u8g2Lib/inc;../Middlewares/MultMenu/application;../Middlewares/MultMenu/disp;../Middlewares/MultMenu/menu;..\user;..\TinyFrame\ex;..\TinyFrame</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -924,6 +924,31 @@
               <FileName>TinyFrame.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\TinyFrame\TinyFrame.h</FilePath>
+            </File>
+            <File>
+              <FileName>tf_master.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\TinyFrame\ex\tf_master.c</FilePath>
+            </File>
+            <File>
+              <FileName>tf_master.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\TinyFrame\ex\tf_master.h</FilePath>
+            </File>
+            <File>
+              <FileName>tf_multinode.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\TinyFrame\ex\tf_multinode.h</FilePath>
+            </File>
+            <File>
+              <FileName>tf_slave.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\TinyFrame\ex\tf_slave.c</FilePath>
+            </File>
+            <File>
+              <FileName>tf_slave.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\TinyFrame\ex\tf_slave.h</FilePath>
             </File>
           </Files>
         </Group>

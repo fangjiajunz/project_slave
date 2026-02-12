@@ -27,6 +27,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usb_uart.h"
+#include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,7 +60,12 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+// USB接收数据回调 - 收到数据后回显
+void serial_on_data_received(uint8_t *buffer, uint16_t len)
+{
+    // 回显收到的数据
+    byte_queue_write(&uart_tx_queue, buffer, len);
+}
 /* USER CODE END 0 */
 
 /**
@@ -89,23 +97,26 @@ int main(void)
     MX_GPIO_Init();
     MX_I2C2_Init();
     MX_SPI1_Init();
-    MX_USB_DEVICE_Init();
+    // MX_USB_DEVICE_Init();  // 由uart_init内部调用
     MX_TIM2_Init();
     /* USER CODE BEGIN 2 */
-
-    //
-    // e22_demo_init();
-
-    //
-    // Menu_Init();
-
+    uart_init();  // 初始化USB串口（内部会调用MX_USB_DEVICE_Init）
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+    static uint32_t count = 0;
     while (1)
     {
-        usb_printf("bbnbbbjhb\r\n");
+        // USB轮询（必须调用）
+        uart_tx_poll();
+        uart_rx_poll();
+
+        // 每秒发送一次测试消息
+        char msg[64];
+        int len = sprintf(msg, "Hello USB! count=%lu\r\n", count++);
+        byte_queue_write(&uart_tx_queue, (uint8_t*)msg, len);
+
         HAL_Delay(1000);
         /* USER CODE END WHILE */
 

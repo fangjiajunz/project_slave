@@ -22,7 +22,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+extern void usb_uart_rx_handler(uint8_t *data, uint32_t len);
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -258,6 +258,8 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
 {
     /* USER CODE BEGIN 6 */
+    usb_uart_rx_handler(Buf, *Len);
+
     USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
     USBD_CDC_ReceivePacket(&hUsbDeviceFS);
     return (USBD_OK);
@@ -292,6 +294,13 @@ uint8_t CDC_Transmit_FS(uint8_t *Buf, uint16_t Len)
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
 #include <stdarg.h>
+
+uint8_t CDC_Transmit_isBusy(void)
+{
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
+    if (hcdc == NULL) return USBD_BUSY;
+    return (hcdc->TxState != 0) ? USBD_BUSY : USBD_OK;
+}
 
 void usb_printf(const char *format, ...)
 {
