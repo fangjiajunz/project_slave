@@ -27,6 +27,9 @@ void TF_WriteImpl(TinyFrame *tf, const uint8_t *buff, uint32_t len)
     {
         // 阻塞直到 TX_DONE 中断
     }
+
+    // 发送完成后重新进入接收模式
+    e22_demo_receive();
 }
 
 // --------- 互斥锁回调函数 ----------

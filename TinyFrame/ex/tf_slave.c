@@ -4,7 +4,7 @@
  */
 
 #include "tf_slave.h"
-#include <stdio.h>
+#include "usbd_cdc_if.h"
 
 /* ========================== 内部变量 ========================== */
 
@@ -29,13 +29,13 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
         return TF_NEXT;
     }
 
-    printf("[Slave %d] Recv Addr=%d, MsgType=0x%02X, Len=%d, Broadcast=%d\r\n",
+    usb_printf("[Slave %d] Recv Addr=%d, MsgType=0x%02X, Len=%d, Broadcast=%d\r\n",
            s_slave_addr, addr, msg_type, msg->len, is_broadcast);
 
     /* 根据消息类型处理 */
     switch (msg_type) {
         case TF_MSG_HEARTBEAT:
-            printf("[Slave %d] Heartbeat request\r\n", s_slave_addr);
+            usb_printf("[Slave %d] Heartbeat request\r\n", s_slave_addr);
             if (!is_broadcast) {
                 /* 单播消息需要响应 */
                 TF_Slave_SendAck(tf, msg);
@@ -43,7 +43,7 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             break;
 
         case TF_MSG_LED_CTRL:
-            printf("[Slave %d] LED control command\r\n", s_slave_addr);
+            usb_printf("[Slave %d] LED control command\r\n", s_slave_addr);
             if (msg->len > 0 && s_led_callback != NULL) {
                 TF_LedCmd cmd = (TF_LedCmd)msg->data[0];
                 s_led_callback(cmd);
@@ -54,7 +54,7 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             break;
 
         case TF_MSG_STATUS_REQ:
-            printf("[Slave %d] Status request\r\n", s_slave_addr);
+            usb_printf("[Slave %d] Status request\r\n", s_slave_addr);
             if (!is_broadcast && s_status_callback != NULL) {
                 TF_StatusData status;
                 status.node_addr = s_slave_addr;
@@ -65,14 +65,14 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             break;
 
         case TF_MSG_CONFIG:
-            printf("[Slave %d] Config command\r\n", s_slave_addr);
+            usb_printf("[Slave %d] Config command\r\n", s_slave_addr);
             if (!is_broadcast) {
                 TF_Slave_SendAck(tf, msg);
             }
             break;
 
         default:
-            printf("[Slave %d] Unknown message type: 0x%02X\r\n",
+            usb_printf("[Slave %d] Unknown message type: 0x%02X\r\n",
                    s_slave_addr, msg_type);
             if (!is_broadcast) {
                 TF_Slave_SendNack(tf, msg);
@@ -93,7 +93,7 @@ bool TF_Slave_Init(TinyFrame *tf, uint8_t addr)
 
     /* 验证地址范围 */
     if (addr < TF_ADDR_SLAVE_MIN || addr > TF_ADDR_SLAVE_MAX) {
-        printf("[Slave] Invalid address: %d\r\n", addr);
+        usb_printf("[Slave] Invalid address: %d\r\n", addr);
         return false;
     }
 
@@ -108,7 +108,7 @@ bool TF_Slave_Init(TinyFrame *tf, uint8_t addr)
     /* 注册通用监听器进行地址过滤 */
     TF_AddGenericListener(tf, Slave_AddressFilter);
 
-    printf("[Slave %d] Initialized\r\n", s_slave_addr);
+    usb_printf("[Slave %d] Initialized\r\n", s_slave_addr);
     return true;
 }
 
@@ -138,7 +138,7 @@ bool TF_Slave_SendAck(TinyFrame *tf, TF_Msg *msg)
     response.data = NULL;
     response.len = 0;
 
-    printf("[Slave %d] Send ACK\r\n", s_slave_addr);
+    usb_printf("[Slave %d] Send ACK\r\n", s_slave_addr);
 
     return TF_Respond(tf, &response);
 }
@@ -154,7 +154,7 @@ bool TF_Slave_SendNack(TinyFrame *tf, TF_Msg *msg)
     response.data = NULL;
     response.len = 0;
 
-    printf("[Slave %d] Send NACK\r\n", s_slave_addr);
+    usb_printf("[Slave %d] Send NACK\r\n", s_slave_addr);
 
     return TF_Respond(tf, &response);
 }
@@ -171,7 +171,7 @@ bool TF_Slave_Respond(TinyFrame *tf, TF_Msg *msg, TF_MsgType msg_type,
     response.data = data;
     response.len = len;
 
-    printf("[Slave %d] Send Response, MsgType=0x%02X\r\n", s_slave_addr, msg_type);
+    usb_printf("[Slave %d] Send Response, MsgType=0x%02X\r\n", s_slave_addr, msg_type);
 
     return TF_Respond(tf, &response);
 }
@@ -186,7 +186,7 @@ bool TF_Slave_SendToMaster(TinyFrame *tf, TF_MsgType msg_type,
     /* 主动发送用 TF_SendSimple，TYPE 带上本机地址 */
     TF_TYPE type = TF_MAKE_TYPE(s_slave_addr, msg_type);
 
-    printf("[Slave %d] Send to Master, MsgType=0x%02X\r\n", s_slave_addr, msg_type);
+    usb_printf("[Slave %d] Send to Master, MsgType=0x%02X\r\n", s_slave_addr, msg_type);
 
     return TF_SendSimple(tf, type, data, len);
 }

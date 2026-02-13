@@ -4,7 +4,7 @@
  */
 
 #include "tf_master.h"
-#include <stdio.h>
+#include "usbd_cdc_if.h"
 
 /* ========================== 内部变量 ========================== */
 
@@ -18,23 +18,23 @@ static TF_Result Master_GenericListener(TinyFrame *tf, TF_Msg *msg)
     uint8_t addr = TF_GET_ADDR(msg->type);
     uint8_t msg_type = TF_GET_MSG(msg->type);
 
-    printf("[Master] Recv from Slave %d, MsgType=0x%02X, Len=%d\r\n",
+    usb_printf("[Master] Recv from Slave %d, MsgType=0x%02X, Len=%d\r\n",
            addr, msg_type, msg->len);
 
     switch (msg_type) {
         case TF_MSG_ACK:
-            printf("[Master] ACK from Slave %d\r\n", addr);
+            usb_printf("[Master] ACK from Slave %d\r\n", addr);
             break;
         case TF_MSG_NACK:
-            printf("[Master] NACK from Slave %d\r\n", addr);
+            usb_printf("[Master] NACK from Slave %d\r\n", addr);
             break;
         case TF_MSG_HEARTBEAT:
-            printf("[Master] Heartbeat from Slave %d\r\n", addr);
+            usb_printf("[Master] Heartbeat from Slave %d\r\n", addr);
             break;
         case TF_MSG_STATUS_RSP:
             if (msg->len >= sizeof(TF_StatusData)) {
                 TF_StatusData *status = (TF_StatusData *)msg->data;
-                printf("[Master] Status: Addr=%d, LED=%d, Err=%d\r\n",
+                usb_printf("[Master] Status: Addr=%d, LED=%d, Err=%d\r\n",
                        status->node_addr, status->led_state, status->error_code);
             }
             break;
@@ -50,7 +50,7 @@ static TF_Result Master_GenericListener(TinyFrame *tf, TF_Msg *msg)
  */
 static TF_Result Master_TimeoutHandler(TinyFrame *tf)
 {
-    printf("[Master] Response timeout!\r\n");
+    usb_printf("[Master] Response timeout!\r\n");
     return TF_CLOSE;
 }
 
@@ -70,7 +70,7 @@ bool TF_Master_Init(TinyFrame *tf)
     /* 注册通用监听器处理从机响应 */
     TF_AddGenericListener(tf, Master_GenericListener);
 
-    printf("[Master] Initialized\r\n");
+    usb_printf("[Master] Initialized\r\n");
     return true;
 }
 
@@ -83,7 +83,7 @@ bool TF_Master_SendTo(TinyFrame *tf, uint8_t slave_addr, TF_MsgType msg_type,
 
     TF_TYPE type = TF_MAKE_TYPE(slave_addr, msg_type);
 
-    printf("[Master] Send to Slave %d, MsgType=0x%02X\r\n", slave_addr, msg_type);
+    usb_printf("[Master] Send to Slave %d, MsgType=0x%02X\r\n", slave_addr, msg_type);
 
     return TF_SendSimple(tf, type, data, len);
 }
@@ -97,7 +97,7 @@ bool TF_Master_QueryTo(TinyFrame *tf, uint8_t slave_addr, TF_MsgType msg_type,
 
     TF_TYPE type = TF_MAKE_TYPE(slave_addr, msg_type);
 
-    printf("[Master] Query to Slave %d, MsgType=0x%02X\r\n", slave_addr, msg_type);
+    usb_printf("[Master] Query to Slave %d, MsgType=0x%02X\r\n", slave_addr, msg_type);
 
     return TF_QuerySimple(tf, type, data, len, listener, Master_TimeoutHandler,
                           TF_MASTER_RESPONSE_TIMEOUT);
@@ -112,7 +112,7 @@ bool TF_Master_Broadcast(TinyFrame *tf, TF_MsgType msg_type,
 
     TF_TYPE type = TF_MAKE_TYPE(TF_ADDR_BROADCAST, msg_type);
 
-    printf("[Master] Broadcast MsgType=0x%02X\r\n", msg_type);
+    usb_printf("[Master] Broadcast MsgType=0x%02X\r\n", msg_type);
 
     return TF_SendSimple(tf, type, data, len);
 }

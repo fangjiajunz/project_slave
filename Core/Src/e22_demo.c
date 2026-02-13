@@ -365,8 +365,8 @@ void e22_demo_dio1_interrupt_callback(void)
                 /* 标记接收 */
                 context_e22.is_rx = true;
 
-                /* (可选) LED RX指示 */
-                gpio_led_rx_on();
+                /* (可选) LED RX指示 - 已禁用，由应用层控制 */
+                // gpio_led_rx_on();
             }
 
             /* 重新进入接收状态 */
