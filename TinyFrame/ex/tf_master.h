@@ -14,7 +14,23 @@
 /* 等待从机响应的超时时间 (ticks) */
 #define TF_MASTER_RESPONSE_TIMEOUT  100
 
+/* ========================== 回调函数类型 ========================== */
+
+/**
+ * @brief  从机数据接收回调函数类型
+ * @param  slave_addr: 发送数据的从机地址
+ * @param  data:       数据指针
+ * @param  len:        数据长度
+ */
+typedef void (*TF_Master_DataCallback)(uint8_t slave_addr, const uint8_t *data, TF_LEN len);
+
 /* ========================== API 函数 ========================== */
+
+/**
+ * @brief  设置从机数据接收回调
+ * @param  callback: 回调函数
+ */
+void TF_Master_SetDataCallback(TF_Master_DataCallback callback);
 
 /**
  * @brief  初始化主机端 TinyFrame

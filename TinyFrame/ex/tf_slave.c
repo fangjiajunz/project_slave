@@ -25,8 +25,8 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
 
     /* 地址过滤: 只处理发给本机或广播的消息 */
     if (!TF_ADDR_MATCH(msg->type, s_slave_addr)) {
-        /* 地址不匹配, 忽略 */
-        return TF_NEXT;
+        /* 地址不匹配, 静默忽略 */
+        return TF_STAY;
     }
 
     usb_printf("[Slave %d] Recv Addr=%d, MsgType=0x%02X, Len=%d, Broadcast=%d\r\n",

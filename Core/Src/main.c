@@ -37,7 +37,7 @@
 /* 根据角色包含对应模块 */
 #define TF_NODE_IS_MASTER 1 /* 1=主机, 0=从机 */
 
-#define TF_SLAVE_ADDRESS 1 /* 从机地址 (1-14) */
+#define TF_SLAVE_ADDRESS 2 /* 从机地址 (1-14) */
 
 #define TF_TARGET_SLAVE_0 1 /* 主机发送目标从机地址 */
 #define TF_TARGET_SLAVE_1 2 /* 主机发送目标从机地址 */
@@ -86,7 +86,27 @@ void serial_on_data_received(uint8_t *buffer, uint16_t len)
     byte_queue_write(&uart_tx_queue, buffer, len);
 }
 
-#if !TF_NODE_IS_MASTER
+#if TF_NODE_IS_MASTER
+/* ========================== 主机回调函数 ========================== */
+
+/**
+ * @brief  主机收到从机数据的回调
+ */
+static void Master_DataCallback(uint8_t slave_addr, const uint8_t *data, TF_LEN len)
+{
+    usb_printf("[Master] Slave %d pressed key! Data=0x%02X\r\n", slave_addr, data[0]);
+
+    /* 翻转 LED */
+    s_led_state = !s_led_state;
+    if (s_led_state) {
+        gpio_led_rx_on();
+    } else {
+        gpio_led_rx_off();
+    }
+    usb_printf("[Master] LED -> %d\r\n", s_led_state);
+}
+
+#else
 /* ========================== 从机回调函数 ========================== */
 
 /**
@@ -172,11 +192,13 @@ int main(void)
 #if TF_NODE_IS_MASTER
     usb_printf("\r\n=== MASTER MODE ===\r\n");
     TF_Master_Init(&tf);
-    usb_printf("UP=LED_ON, DOWN=LED_OFF, ENTER=TOGGLE\r\n");
+    TF_Master_SetDataCallback(Master_DataCallback);  /* 设置数据回调 */
+    usb_printf("UP=Slave1, DOWN=Slave2, ENTER=Broadcast\r\n");
 #else
     usb_printf("\r\n=== SLAVE MODE (addr=%d) ===\r\n", TF_SLAVE_ADDRESS);
     TF_Slave_Init(&tf, TF_SLAVE_ADDRESS);
     TF_Slave_SetLedCallback(Slave_LedCallback);
+    usb_printf("Press ENTER to send key event to Master\r\n");
 #endif
 
     /* 进入 LoRa 接收模式 */
@@ -221,7 +243,13 @@ int main(void)
             TF_Master_BroadcastLedCmd(&tf, LED_CMD_TOGGLE);
         }
 #else
-        /* 3. 从机: 无需额外逻辑，回调自动处理 */
+        /* 3. 从机: 按键检测，发送数据给主机 */
+        if (key_check_press(KEY_NAME_ENTER))
+        {
+            uint8_t key_event = 0x01;  /* 按键事件代码 */
+            usb_printf("[Slave %d] Key ENTER -> Send to Master\r\n", TF_SLAVE_ADDRESS);
+            TF_Slave_ReportEvent(&tf, key_event);
+        }
 #endif
 
         /* USER CODE END WHILE */

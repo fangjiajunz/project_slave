@@ -13,6 +13,14 @@
 /**
  * @brief  通用响应处理监听器
  */
+/* LED 翻转回调函数指针 */
+static TF_Master_DataCallback s_data_callback = NULL;
+
+void TF_Master_SetDataCallback(TF_Master_DataCallback callback)
+{
+    s_data_callback = callback;
+}
+
 static TF_Result Master_GenericListener(TinyFrame *tf, TF_Msg *msg)
 {
     uint8_t addr = TF_GET_ADDR(msg->type);
@@ -36,6 +44,13 @@ static TF_Result Master_GenericListener(TinyFrame *tf, TF_Msg *msg)
                 TF_StatusData *status = (TF_StatusData *)msg->data;
                 usb_printf("[Master] Status: Addr=%d, LED=%d, Err=%d\r\n",
                        status->node_addr, status->led_state, status->error_code);
+            }
+            break;
+        case TF_MSG_DATA:
+            usb_printf("[Master] Data from Slave %d, Len=%d\r\n", addr, msg->len);
+            /* 调用用户回调 */
+            if (s_data_callback != NULL) {
+                s_data_callback(addr, msg->data, msg->len);
             }
             break;
         default:
