@@ -35,7 +35,7 @@
 #include "usb_uart.h"
 
 /* 根据角色包含对应模块 */
-#define TF_NODE_IS_MASTER 0/* 1=主机, 0=从机 */
+#define TF_NODE_IS_MASTER 1 /* 1=主机, 0=从机 */
 
 #define TF_SLAVE_ADDRESS 1 /* 从机地址 (1-14) */
 
@@ -218,7 +218,7 @@ int main(void)
         if (key_check_press(KEY_NAME_ENTER))
         {
             usb_printf("[Master] Key ENTER -> LED TOGGLE\r\n");
-            TF_Master_SendLedCmd(&tf, 0, LED_CMD_TOGGLE);
+            TF_Master_BroadcastLedCmd(&tf, LED_CMD_TOGGLE);
         }
 #else
         /* 3. 从机: 无需额外逻辑，回调自动处理 */

@@ -88,7 +88,7 @@ typedef uint8_t TF_COUNT;
 #define TF_USE_MUTEX 0
 
 // 错误报告函数。要禁用调试，改为空定义
-#define TF_Error(format, ...) printf("[TF] " format "\n", ##__VA_ARGS__)
+#define TF_Error(format, ...) usb_printf("[TF] " format "\n", ##__VA_ARGS__)
 
 //------------------------- 用户配置结束 ------------------------------
 

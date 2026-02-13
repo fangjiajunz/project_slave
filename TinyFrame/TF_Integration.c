@@ -9,23 +9,44 @@
  * 另外，如果你想使用监听器超时功能，请记得定期调用 TF_Tick()。
  */
 #include "main.h"
+#include "usbd_cdc_if.h"
+
+// TX 等待超时时间 (毫秒)
+#define TF_TX_TIMEOUT_MS  1000
+
 extern context_e22_t context_e22;
+
 void TF_WriteImpl(TinyFrame *tf, const uint8_t *buff, uint32_t len)
 {
-    // 发送到 UART
     (void)tf;
-    // 等待上次发送完成（如果有）
+    uint32_t timeout_start;
+
+    // 等待上次发送完成（带超时保护）
+    timeout_start = HAL_GetTick();
     while (context_e22.is_tx)
     {
-        // 可选：加超时保护
+        if (HAL_GetTick() - timeout_start > TF_TX_TIMEOUT_MS)
+        {
+            usb_printf("[WARN] TX wait timeout, force reset\r\n");
+            context_e22.is_tx = false;
+            e22_demo_receive();  // 强制恢复接收模式
+            break;
+        }
     }
+
     // 启动发送
     e22_demo_transmit((uint8_t *)buff, (uint8_t)len);
 
-    // 等待本次发送完成
+    // 等待本次发送完成（带超时保护）
+    timeout_start = HAL_GetTick();
     while (context_e22.is_tx)
     {
-        // 阻塞直到 TX_DONE 中断
+        if (HAL_GetTick() - timeout_start > TF_TX_TIMEOUT_MS)
+        {
+            usb_printf("[WARN] TX done timeout, force reset\r\n");
+            context_e22.is_tx = false;
+            break;
+        }
     }
 
     // 发送完成后重新进入接收模式
