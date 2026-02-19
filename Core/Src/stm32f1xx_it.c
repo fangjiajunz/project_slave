@@ -23,6 +23,8 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "tim.h"
+#include "TinyFrame.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,7 +44,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+extern TinyFrame tf;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -228,5 +230,25 @@ void USB_LP_CAN1_RX0_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+
+/**
+ * @brief This function handles TIM2 global interrupt.
+ */
+void TIM2_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&htim2);
+}
+
+/**
+ * @brief  TIM2 1ms 周期中断回调
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM2)
+    {
+        /* 在此添加 1ms 周期任务 */
+        TF_Tick(&tf);
+    }
+}
 
 /* USER CODE END 1 */

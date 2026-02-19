@@ -180,6 +180,7 @@ int main(void)
     // MX_USB_DEVICE_Init();  // 由uart_init内部调用
     MX_TIM2_Init();
     /* USER CODE BEGIN 2 */
+    HAL_TIM_Base_Start_IT(&htim2);  /* 启动 TIM2 1ms 定时中断 */
     uart_init();  // 初始化USB串口
 
     /* 等待 USB 枚举完成 */
