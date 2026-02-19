@@ -464,7 +464,7 @@ bool _TF_FN TF_RemoveTypeListener(TinyFrame *tf, TF_TYPE type)
         }
     }
 
-   TF_Error("Failed to remove type listener: type %d not found", (int)type);
+    TF_Error("Failed to remove type listener: type %d not found", (int)type);
 
     return false;
 }
@@ -600,7 +600,6 @@ static void _TF_FN TF_HandleReceivedMessage(TinyFrame *tf)
     }
 
     TF_Error("Unhandled message, type %d", (int)msg.type);
-
 }
 
 /** 外部重新续期 ID 监听器 */
