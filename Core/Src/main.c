@@ -37,7 +37,7 @@
 /* 根据角色包含对应模块 */
 #define TF_NODE_IS_MASTER 1 /* 1=主机, 0=从机 */
 
-#define TF_SLAVE_ADDRESS 2 /* 从机地址 (1-14) */
+#define TF_SLAVE_ADDRESS 1 /* 从机地址 (1-14) */
 
 #define TF_TARGET_SLAVE_0 1 /* 主机发送目标从机地址 */
 #define TF_TARGET_SLAVE_1 2 /* 主机发送目标从机地址 */
@@ -212,6 +212,16 @@ int main(void)
     /* USER CODE BEGIN WHILE */
     while (1)
     {
+        /* 0. TF_Tick 超时驱动 — 在主循环中调用，避免中断上下文阻塞 */
+        {
+            static uint32_t last_tick = 0;
+            uint32_t now = HAL_GetTick();
+            while (last_tick < now) {
+                TF_Tick(&tf);
+                last_tick++;
+            }
+        }
+
         /* 1. USB 轮询 */
         uart_tx_poll();
         uart_rx_poll();

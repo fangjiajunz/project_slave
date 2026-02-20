@@ -19,6 +19,7 @@
 #define TF_MULTINODE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "TinyFrame.h"
 
 /* ========================== 地址定义 ========================== */
@@ -116,5 +117,63 @@ typedef struct {
 #define TF_IN_MY_SLOT(tick_ms, addr) \
     (((tick_ms) % TF_SLOT_PERIOD_MS) >= TF_SLOT_START(addr) && \
      ((tick_ms) % TF_SLOT_PERIOD_MS) < (TF_SLOT_START(addr) + TF_SLOT_WIDTH_MS))
+
+/* ========================== 消息去重 ========================== */
+
+/**
+ * 环形去重缓冲区 — 记录最近处理过的 (来源地址 + Frame ID) 对，
+ * 用于检测重传导致的重复帧。
+ *
+ * 存储 (addr, frame_id) 对而非单独 frame_id，
+ * 避免不同从机的 ID 计数器重叠导致误判。
+ *
+ * TF_ID 当前为 uint8_t (TF_ID_BYTES=1)，范围 0-255，
+ * 缓冲区大小 16 足以覆盖短期内的所有活跃记录。
+ */
+#define TF_DEDUP_BUF_SIZE   16
+
+typedef struct {
+    struct {
+        uint8_t addr;                    /* 来源地址 */
+        TF_ID   id;                      /* Frame ID */
+    } entries[TF_DEDUP_BUF_SIZE];        /* 环形数组 */
+    uint8_t write_idx;                   /* 下一个写入位置 */
+    uint8_t count;                       /* 已记录数量 (最大 = TF_DEDUP_BUF_SIZE) */
+} TF_DedupBuf;
+
+/**
+ * @brief  初始化去重缓冲区
+ */
+static inline void TF_Dedup_Init(TF_DedupBuf *buf)
+{
+    buf->write_idx = 0;
+    buf->count = 0;
+}
+
+/**
+ * @brief  检查 (来源地址 + Frame ID) 是否重复，并记录新条目
+ * @param  buf:  去重缓冲区
+ * @param  addr: 来源地址 (区分不同发送方)
+ * @param  id:   待检查的 Frame ID
+ * @return true = 重复帧 (已存在), false = 新帧 (已记录)
+ */
+static inline bool TF_Dedup_IsDuplicate(TF_DedupBuf *buf, uint8_t addr, TF_ID id)
+{
+    /* 在已有记录中查找 (addr + id) 对 */
+    uint8_t n = (buf->count < TF_DEDUP_BUF_SIZE) ? buf->count : TF_DEDUP_BUF_SIZE;
+    for (uint8_t i = 0; i < n; i++) {
+        if (buf->entries[i].addr == addr && buf->entries[i].id == id) {
+            return true;    /* 重复 */
+        }
+    }
+    /* 新条目，记录到环形缓冲区 */
+    buf->entries[buf->write_idx].addr = addr;
+    buf->entries[buf->write_idx].id   = id;
+    buf->write_idx = (buf->write_idx + 1) % TF_DEDUP_BUF_SIZE;
+    if (buf->count < TF_DEDUP_BUF_SIZE) {
+        buf->count++;
+    }
+    return false;   /* 新帧 */
+}
 
 #endif /* TF_MULTINODE_H */

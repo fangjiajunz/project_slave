@@ -259,7 +259,7 @@ void e22_demo_transmit(uint8_t *buffer, uint8_t length)
     context_e22.is_tx = true;
 
     /* (可选) LED TX指示 */
-    gpio_led_tx_on();
+//    gpio_led_tx_on();
 }
 
 /**
@@ -380,7 +380,7 @@ void e22_demo_dio1_interrupt_callback(void)
             context_e22.is_tx = false;
 
             /* (可选) LED TX指示 */
-            gpio_led_tx_off();
+//            gpio_led_tx_off();
         }
     }
 }

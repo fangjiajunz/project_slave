@@ -157,17 +157,26 @@ main() {
 
 ### 消息可靠性机制
 
-**已实现的机制：**
+**基础机制：**
 - CRC16 双校验（帧头 + 数据），校验失败帧被丢弃（`TF_Config.h` 配置 `TF_CKSUM_CRC16`）
 - SOF 字节 (0x01) 帧同步（`TF_Config.h`）
-- 从机对单播消息回复 ACK/NACK，广播消息不响应（`tf_slave.c` `Slave_AddressFilter()`）
-- `TF_Master_QueryTo()` 支持带超时的请求-响应模式（超时 100 ticks，`tf_master.h`）
 - Frame ID 匹配请求与响应（`tf_slave.c` 中 `response.frame_id = msg->frame_id`）
 - TX 超时保护 1000ms，防止发送卡死（`TF_Integration.c`）
 - TDMA 时间槽防冲突：周期 100ms，每从机 20ms 窗口（`tf_multinode.h`）
+- `TF_Tick()` 在 TIM2 1ms 中断中调用，驱动所有超时计数（`stm32f1xx_it.c`）
 
-**当前不足：**
-- 无自动重传：超时/NACK 后只打印日志，不重发（`tf_master.c` `Master_TimeoutHandler()`）
-- LED 命令使用 `TF_SendSimple` 发后即忘，不监听 ACK（`tf_master.c` `TF_Master_SendLedCmd()`）
-- 从机主动上报（`TF_Slave_ReportEvent/ReportData`）无确认机制
-- 无消息去重/乱序检测
+**主机 → 从机（可靠单播）：**
+- `TF_Master_SendTo()` 内置 ACK 等待 + 超时自动重试（最多 3 次，超时 100ms）
+- 所有经过 `SendTo()` 的便捷 API（SendLedCmd 等）自动获得可靠性
+- `TF_Master_QueryTo()` 等待自定义响应，超时由调用方处理，不自动重试
+- `TF_Master_Broadcast()` 广播发后即忘，从机不回复
+
+**从机 → 主机（可靠上报）：**
+- `TF_Slave_SendToMaster()` 内置 ACK 等待 + 超时自动重试（最多 2 次，超时 150ms）
+- ReportEvent / ReportData 经过 SendToMaster，自动获得可靠性
+- 主机 `Master_GenericListener` 收到 DATA 后回复 ACK（`TF_Respond`）
+
+**消息去重：**
+- 环形 ID 缓冲区（16 条记录），重复帧只回 ACK 不执行业务逻辑（`tf_multinode.h`）
+- 从机侧：`Slave_AddressFilter()` 地址匹配后、业务处理前做去重
+- 主机侧：`Master_GenericListener()` 的 DATA 分支做去重

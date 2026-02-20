@@ -696,7 +696,7 @@ void rx_mode_callback(xpItem item)
                         rx_hint(HINT_DONE);
                     }
 
-                    gpio_led_rx_off();
+                    // gpio_led_rx_off();
                 }
             }
             else
