@@ -91,7 +91,9 @@
 "project\crc16.o"
 "project\heap_4.o"
 "project\usb_uart.o"
---library_type=microlib --strict --scatter "project\project.sct"
+"project\nvm2.o"
+"project\log.o"
+--library_type=microlib --strict --scatter "project\project_slave.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
---list "project.map" -o project\project.axf
+--list "project_slave.map" -o project\project_slave.axf

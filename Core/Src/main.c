@@ -30,23 +30,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#define LOG_TAG "App"
+#include "log.h"
+
 #include "TinyFrame.h"
 #include "tf_multinode.h"
 #include "usb_uart.h"
 
-/* 根据角色包含对应模块 */
-#define TF_NODE_IS_MASTER 1 /* 1=主机, 0=从机 */
-
 #define TF_SLAVE_ADDRESS 1 /* 从机地址 (1-14) */
 
-#define TF_TARGET_SLAVE_0 1 /* 主机发送目标从机地址 */
-#define TF_TARGET_SLAVE_1 2 /* 主机发送目标从机地址 */
-
-#if TF_NODE_IS_MASTER
-#include "tf_master.h"
-#else
 #include "tf_slave.h"
-#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -86,27 +79,6 @@ void serial_on_data_received(uint8_t *buffer, uint16_t len)
     byte_queue_write(&uart_tx_queue, buffer, len);
 }
 
-#if TF_NODE_IS_MASTER
-/* ========================== 主机回调函数 ========================== */
-
-/**
- * @brief  主机收到从机数据的回调
- */
-static void Master_DataCallback(uint8_t slave_addr, const uint8_t *data, TF_LEN len)
-{
-    usb_printf("[Master] Slave %d pressed key! Data=0x%02X\r\n", slave_addr, data[0]);
-
-    /* 翻转 LED */
-    s_led_state = !s_led_state;
-    if (s_led_state) {
-        gpio_led_rx_on();
-    } else {
-        gpio_led_rx_off();
-    }
-    usb_printf("[Master] LED -> %d\r\n", s_led_state);
-}
-
-#else
 /* ========================== 从机回调函数 ========================== */
 
 /**
@@ -119,12 +91,12 @@ static void Slave_LedCallback(TF_LedCmd led_cmd)
         case LED_CMD_OFF:
             s_led_state = false;
             gpio_led_rx_off();
-            usb_printf("[Slave] LED OFF\r\n");
+            log_info("LED OFF");
             break;
         case LED_CMD_ON:
             s_led_state = true;
             gpio_led_rx_on();
-            usb_printf("[Slave] LED ON\r\n");
+            log_info("LED ON");
             break;
         case LED_CMD_TOGGLE:
             s_led_state = !s_led_state;
@@ -136,15 +108,13 @@ static void Slave_LedCallback(TF_LedCmd led_cmd)
             {
                 gpio_led_rx_off();
             }
-            usb_printf("[Slave] LED TOGGLE -> %d\r\n", s_led_state);
+            log_info("LED TOGGLE -> %d", s_led_state);
             break;
         default:
-            usb_printf("[Slave] Unknown LED cmd: %d\r\n", led_cmd);
+            log_warn("Unknown LED cmd: %d", led_cmd);
             break;
     }
 }
-
-#endif /* !TF_NODE_IS_MASTER */
 
 /* USER CODE END 0 */
 
@@ -184,28 +154,24 @@ int main(void)
     uart_init();  // 初始化USB串口
 
     /* 等待 USB 枚举完成 */
-    HAL_Delay(500);
+    HAL_Delay(5000);
+
+    /* 设置日志级别 */
+    log_set_level(LOG_DEBUG);
 
     /* 初始化 LoRa 模组 */
     e22_demo_init();
 
     /* 初始化 TinyFrame */
-#if TF_NODE_IS_MASTER
-    usb_printf("\r\n=== MASTER MODE ===\r\n");
-    TF_Master_Init(&tf);
-    TF_Master_SetDataCallback(Master_DataCallback);  /* 设置数据回调 */
-    usb_printf("UP=Slave1, DOWN=Slave2, ENTER=Broadcast\r\n");
-#else
-    usb_printf("\r\n=== SLAVE MODE (addr=%d) ===\r\n", TF_SLAVE_ADDRESS);
+    log_info("=== SLAVE MODE (addr=%d) ===", TF_SLAVE_ADDRESS);
     TF_Slave_Init(&tf, TF_SLAVE_ADDRESS);
     TF_Slave_SetLedCallback(Slave_LedCallback);
-    usb_printf("Press ENTER to send key event to Master\r\n");
-#endif
+    log_info("Press ENTER to send key event to Master");
 
     /* 进入 LoRa 接收模式 */
     e22_demo_receive();
 
-    usb_printf("System Ready!\r\n");
+    log_info("System Ready!");
     /* USER CODE END 2 */
 
     /* Infinite loop */
@@ -232,36 +198,17 @@ int main(void)
         int8_t rssi;
         if (e22_demo_check_rx_done(rx_buf, &rx_len, &rssi))
         {
-            usb_printf("[LoRa] RX %d bytes, RSSI=%d\r\n", rx_len, rssi);
+            log_debug("RX %d bytes, RSSI=%d", rx_len, rssi);
             TF_Accept(&tf, rx_buf, rx_len);
         }
 
-#if TF_NODE_IS_MASTER
-        /* 3. 主机: 按键检测发送命令 */
-        if (key_check_press(KEY_NAME_UP))
-        {
-            usb_printf("[Master] Key UP -> LED ON\r\n");
-            TF_Master_SendLedCmd(&tf, TF_TARGET_SLAVE_0, LED_CMD_TOGGLE);
-        }
-        if (key_check_press(KEY_NAME_DOWN))
-        {
-            usb_printf("[Master] Key DOWN -> LED OFF\r\n");
-            TF_Master_SendLedCmd(&tf, TF_TARGET_SLAVE_1, LED_CMD_TOGGLE);
-        }
-        if (key_check_press(KEY_NAME_ENTER))
-        {
-            usb_printf("[Master] Key ENTER -> LED TOGGLE\r\n");
-            TF_Master_BroadcastLedCmd(&tf, LED_CMD_TOGGLE);
-        }
-#else
         /* 3. 从机: 按键检测，发送数据给主机 */
         if (key_check_press(KEY_NAME_ENTER))
         {
             uint8_t key_event = 0x01;  /* 按键事件代码 */
-            usb_printf("[Slave %d] Key ENTER -> Send to Master\r\n", TF_SLAVE_ADDRESS);
+            log_info("Key ENTER -> Send to Master");
             TF_Slave_ReportEvent(&tf, key_event);
         }
-#endif
 
         /* USER CODE END WHILE */
 

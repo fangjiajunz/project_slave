@@ -8,7 +8,6 @@
 #define TF_CONFIG_H
 
 #include <stdint.h>
-#include <stdio.h>  // 用于下面定义的 TF_Error() 宏
 // #include <esp8266.h> // 当与 esphttpd 一起使用时
 
 //----------------------------- 帧格式 ---------------------------------
@@ -88,7 +87,10 @@ typedef uint8_t TF_COUNT;
 #define TF_USE_MUTEX 0
 
 // 错误报告函数。要禁用调试，改为空定义
-#define TF_Error(format, ...) usb_printf("[TF] " format "\n", ##__VA_ARGS__)
+// 注意: TF_Error 在 TinyFrame.c 内部使用，无法使用 LOG_TAG
+// 这里直接调用 log_log() 并指定 tag 为 "TF"
+#include "log.h"
+#define TF_Error(format, ...) log_log(LOG_ERROR, "TF", NULL, 0, format, ##__VA_ARGS__)
 
 //------------------------- 用户配置结束 ------------------------------
 

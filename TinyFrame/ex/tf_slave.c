@@ -3,8 +3,10 @@
  * @brief   TinyFrame 从机端模块实现
  */
 
+#define LOG_TAG "Slave"
+#include "log.h"
+
 #include "tf_slave.h"
-#include "usbd_cdc_if.h"
 #include <string.h>
 
 /* ========================== 内部变量 ========================== */
@@ -39,7 +41,7 @@ static TF_DedupBuf s_dedup;
  */
 static TF_Result Slave_MasterAckListener(TinyFrame *tf, TF_Msg *msg)
 {
-    usb_printf("[Slave %d] Master ACK received\r\n", s_slave_addr);
+    log_debug("Master ACK received");
     s_report_retry.retries_left = 0;    /* 收到确认，停止重试 */
     return TF_CLOSE;
 }
@@ -55,8 +57,7 @@ static TF_Result Slave_ReportTimeoutHandler(TinyFrame *tf)
 {
     if (s_report_retry.retries_left > 0) {
         s_report_retry.retries_left--;
-        usb_printf("[Slave %d] Report timeout, retry (%d left)\r\n",
-                   s_slave_addr, s_report_retry.retries_left);
+        log_warn("Report timeout, retry (%d left)", s_report_retry.retries_left);
 
         /* 从重试上下文恢复参数，重新发送 */
         TF_TYPE type = TF_MAKE_TYPE(s_slave_addr, s_report_retry.msg_type);
@@ -65,7 +66,7 @@ static TF_Result Slave_ReportTimeoutHandler(TinyFrame *tf)
                         Slave_MasterAckListener, Slave_ReportTimeoutHandler,
                         TF_SLAVE_RESPONSE_TIMEOUT);
     } else {
-        usb_printf("[Slave %d] Report failed, master unreachable\r\n", s_slave_addr);
+        log_error("Report failed, master unreachable");
     }
     return TF_CLOSE;
 }
@@ -85,15 +86,14 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
         return TF_STAY;
     }
 
-    usb_printf("[Slave %d] Recv Addr=%d, MsgType=0x%02X, Len=%d, Broadcast=%d\r\n",
-           s_slave_addr, addr, msg_type, msg->len, is_broadcast);
+    log_debug("Recv Addr=%d, MsgType=0x%02X, Len=%d, Broadcast=%d",
+           addr, msg_type, msg->len, is_broadcast);
 
     /* 去重检查：如果是重复帧，只回 ACK 不执行业务逻辑。
      * 场景：主机发了 LED_TOGGLE，从机执行并回 ACK，但 ACK 丢失，
      * 主机重发 LED_TOGGLE，没有去重的话 LED 会翻转两次。 */
     if (TF_Dedup_IsDuplicate(&s_dedup, TF_ADDR_MASTER, msg->frame_id)) {
-        usb_printf("[Slave %d] Duplicate frame %d, ACK only\r\n",
-                   s_slave_addr, msg->frame_id);
+        log_debug("Duplicate frame %d, ACK only", msg->frame_id);
         if (!is_broadcast) {
             TF_Slave_SendAck(tf, msg);
         }
@@ -103,7 +103,7 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
     /* 根据消息类型处理 */
     switch (msg_type) {
         case TF_MSG_HEARTBEAT:
-            usb_printf("[Slave %d] Heartbeat request\r\n", s_slave_addr);
+            log_debug("Heartbeat request");
             if (!is_broadcast) {
                 /* 单播消息需要响应 */
                 TF_Slave_SendAck(tf, msg);
@@ -111,7 +111,7 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             break;
 
         case TF_MSG_LED_CTRL:
-            usb_printf("[Slave %d] LED control command\r\n", s_slave_addr);
+            log_debug("LED control command");
             if (msg->len > 0 && s_led_callback != NULL) {
                 TF_LedCmd cmd = (TF_LedCmd)msg->data[0];
                 s_led_callback(cmd);
@@ -122,7 +122,7 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             break;
 
         case TF_MSG_STATUS_REQ:
-            usb_printf("[Slave %d] Status request\r\n", s_slave_addr);
+            log_debug("Status request");
             if (!is_broadcast && s_status_callback != NULL) {
                 TF_StatusData status;
                 status.node_addr = s_slave_addr;
@@ -133,15 +133,14 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             break;
 
         case TF_MSG_CONFIG:
-            usb_printf("[Slave %d] Config command\r\n", s_slave_addr);
+            log_debug("Config command");
             if (!is_broadcast) {
                 TF_Slave_SendAck(tf, msg);
             }
             break;
 
         default:
-            usb_printf("[Slave %d] Unknown message type: 0x%02X\r\n",
-                   s_slave_addr, msg_type);
+            log_warn("Unknown message type: 0x%02X", msg_type);
             if (!is_broadcast) {
                 TF_Slave_SendNack(tf, msg);
             }
@@ -161,7 +160,7 @@ bool TF_Slave_Init(TinyFrame *tf, uint8_t addr)
 
     /* 验证地址范围 */
     if (addr < TF_ADDR_SLAVE_MIN || addr > TF_ADDR_SLAVE_MAX) {
-        usb_printf("[Slave] Invalid address: %d\r\n", addr);
+        log_error("Invalid address: %d", addr);
         return false;
     }
 
@@ -179,7 +178,7 @@ bool TF_Slave_Init(TinyFrame *tf, uint8_t addr)
     /* 注册通用监听器进行地址过滤 */
     TF_AddGenericListener(tf, Slave_AddressFilter);
 
-    usb_printf("[Slave %d] Initialized\r\n", s_slave_addr);
+    log_info("Initialized (addr=%d)", s_slave_addr);
     return true;
 }
 
@@ -209,7 +208,7 @@ bool TF_Slave_SendAck(TinyFrame *tf, TF_Msg *msg)
     response.data = NULL;
     response.len = 0;
 
-    usb_printf("[Slave %d] Send ACK\r\n", s_slave_addr);
+    log_trace("Send ACK");
 
     return TF_Respond(tf, &response);
 }
@@ -225,7 +224,7 @@ bool TF_Slave_SendNack(TinyFrame *tf, TF_Msg *msg)
     response.data = NULL;
     response.len = 0;
 
-    usb_printf("[Slave %d] Send NACK\r\n", s_slave_addr);
+    log_trace("Send NACK");
 
     return TF_Respond(tf, &response);
 }
@@ -242,7 +241,7 @@ bool TF_Slave_Respond(TinyFrame *tf, TF_Msg *msg, TF_MsgType msg_type,
     response.data = data;
     response.len = len;
 
-    usb_printf("[Slave %d] Send Response, MsgType=0x%02X\r\n", s_slave_addr, msg_type);
+    log_debug("Send Response, MsgType=0x%02X", msg_type);
 
     return TF_Respond(tf, &response);
 }
@@ -264,7 +263,7 @@ bool TF_Slave_SendToMaster(TinyFrame *tf, TF_MsgType msg_type,
         return false;
     }
     if (len > TF_SLAVE_MAX_PAYLOAD) {
-        usb_printf("[Slave %d] Payload too large for retry buffer\r\n", s_slave_addr);
+        log_error("Payload too large for retry buffer");
         return false;
     }
 
@@ -278,7 +277,7 @@ bool TF_Slave_SendToMaster(TinyFrame *tf, TF_MsgType msg_type,
 
     TF_TYPE type = TF_MAKE_TYPE(s_slave_addr, msg_type);
 
-    usb_printf("[Slave %d] Send to Master, MsgType=0x%02X\r\n", s_slave_addr, msg_type);
+    log_debug("Send to Master, MsgType=0x%02X", msg_type);
 
     return TF_QuerySimple(tf, type, data, len,
                            Slave_MasterAckListener, Slave_ReportTimeoutHandler,

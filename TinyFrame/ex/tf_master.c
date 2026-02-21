@@ -14,8 +14,10 @@
  *   BroadcastLedCmd() → Broadcast() → TF_SendSimple()           (不可靠)
  */
 
+#define LOG_TAG "Master"
+#include "log.h"
+
 #include "tf_master.h"
-#include "usbd_cdc_if.h"
 #include <string.h>
 
 /* ========================== 内部变量 ========================== */
@@ -62,35 +64,35 @@ static TF_Result Master_GenericListener(TinyFrame *tf, TF_Msg *msg)
     uint8_t addr = TF_GET_ADDR(msg->type);
     uint8_t msg_type = TF_GET_MSG(msg->type);
 
-    usb_printf("[Master] Recv from Slave %d, MsgType=0x%02X, Len=%d\r\n",
+    log_debug("Recv from Slave %d, MsgType=0x%02X, Len=%d",
            addr, msg_type, msg->len);
 
     switch (msg_type) {
         case TF_MSG_ACK:
-            usb_printf("[Master] ACK from Slave %d\r\n", addr);
+            log_debug("ACK from Slave %d", addr);
             break;
         case TF_MSG_NACK:
-            usb_printf("[Master] NACK from Slave %d\r\n", addr);
+            log_debug("NACK from Slave %d", addr);
             break;
         case TF_MSG_HEARTBEAT:
-            usb_printf("[Master] Heartbeat from Slave %d\r\n", addr);
+            log_debug("Heartbeat from Slave %d", addr);
             break;
         case TF_MSG_STATUS_RSP:
             if (msg->len >= sizeof(TF_StatusData)) {
                 TF_StatusData *status = (TF_StatusData *)msg->data;
-                usb_printf("[Master] Status: Addr=%d, LED=%d, Err=%d\r\n",
+                log_info("Status: Addr=%d, LED=%d, Err=%d",
                        status->node_addr, status->led_state, status->error_code);
             }
             break;
         case TF_MSG_DATA:
-            usb_printf("[Master] Data from Slave %d, Len=%d\r\n", addr, msg->len);
+            log_debug("Data from Slave %d, Len=%d", addr, msg->len);
             /* 去重：重复帧只回 ACK，不重复调用用户回调 */
             if (!TF_Dedup_IsDuplicate(&s_dedup, addr, msg->frame_id)) {
                 if (s_data_callback != NULL) {
                     s_data_callback(addr, msg->data, msg->len);
                 }
             } else {
-                usb_printf("[Master] Duplicate frame %d from Slave %d, ACK only\r\n",
+                log_debug("Duplicate frame %d from Slave %d, ACK only",
                            msg->frame_id, addr);
             }
             /* 无论新帧还是重复帧，都回 ACK 让从机停止重试 */
@@ -126,9 +128,9 @@ static TF_Result Master_AckListener(TinyFrame *tf, TF_Msg *msg)
     uint8_t msg_type = TF_GET_MSG(msg->type);
 
     if (msg_type == TF_MSG_ACK) {
-        usb_printf("[Master] ACK from Slave %d\r\n", addr);
+        log_debug("ACK from Slave %d", addr);
     } else if (msg_type == TF_MSG_NACK) {
-        usb_printf("[Master] NACK from Slave %d\r\n", addr);
+        log_debug("NACK from Slave %d", addr);
     }
     s_retry_ctx.retries_left = 0;   /* 收到响应，停止重试 */
     return TF_CLOSE;                /* 移除此 ID 监听器 */
@@ -150,7 +152,7 @@ static TF_Result Master_RetryTimeoutHandler(TinyFrame *tf)
 {
     if (s_retry_ctx.retries_left > 0) {
         s_retry_ctx.retries_left--;
-        usb_printf("[Master] Timeout, retry (%d left)\r\n", s_retry_ctx.retries_left);
+        log_warn("Timeout, retry (%d left)", s_retry_ctx.retries_left);
 
         /* 从重试上下文恢复参数，重新发送 */
         TF_TYPE type = TF_MAKE_TYPE(s_retry_ctx.slave_addr, s_retry_ctx.msg_type);
@@ -159,7 +161,7 @@ static TF_Result Master_RetryTimeoutHandler(TinyFrame *tf)
                         Master_AckListener, Master_RetryTimeoutHandler,
                         TF_MASTER_RESPONSE_TIMEOUT);
     } else {
-        usb_printf("[Master] All retries exhausted\r\n");
+        log_error("All retries exhausted");
     }
     return TF_CLOSE;
 }
@@ -169,7 +171,7 @@ static TF_Result Master_RetryTimeoutHandler(TinyFrame *tf)
  */
 static TF_Result Master_TimeoutHandler(TinyFrame *tf)
 {
-    usb_printf("[Master] Response timeout!\r\n");
+    log_warn("Response timeout!");
     return TF_CLOSE;
 }
 
@@ -190,7 +192,7 @@ bool TF_Master_Init(TinyFrame *tf)
 
     TF_AddGenericListener(tf, Master_GenericListener);
 
-    usb_printf("[Master] Initialized\r\n");
+    log_info("Initialized");
     return true;
 }
 
@@ -211,7 +213,7 @@ bool TF_Master_SendTo(TinyFrame *tf, uint8_t slave_addr, TF_MsgType msg_type,
         return false;
     }
     if (len > TF_MASTER_MAX_PAYLOAD) {
-        usb_printf("[Master] Payload too large for retry buffer\r\n");
+        log_error("Payload too large for retry buffer");
         return false;
     }
 
@@ -226,7 +228,7 @@ bool TF_Master_SendTo(TinyFrame *tf, uint8_t slave_addr, TF_MsgType msg_type,
 
     TF_TYPE type = TF_MAKE_TYPE(slave_addr, msg_type);
 
-    usb_printf("[Master] Send to Slave %d, MsgType=0x%02X\r\n", slave_addr, msg_type);
+    log_debug("Send to Slave %d, MsgType=0x%02X", slave_addr, msg_type);
 
     /*
      * TF_QuerySimple 与 TF_SendSimple 的区别：
@@ -255,7 +257,7 @@ bool TF_Master_QueryTo(TinyFrame *tf, uint8_t slave_addr, TF_MsgType msg_type,
 
     TF_TYPE type = TF_MAKE_TYPE(slave_addr, msg_type);
 
-    usb_printf("[Master] Query to Slave %d, MsgType=0x%02X\r\n", slave_addr, msg_type);
+    log_debug("Query to Slave %d, MsgType=0x%02X", slave_addr, msg_type);
 
     return TF_QuerySimple(tf, type, data, len, listener, Master_TimeoutHandler,
                           TF_MASTER_RESPONSE_TIMEOUT);
@@ -273,7 +275,7 @@ bool TF_Master_Broadcast(TinyFrame *tf, TF_MsgType msg_type,
 
     TF_TYPE type = TF_MAKE_TYPE(TF_ADDR_BROADCAST, msg_type);
 
-    usb_printf("[Master] Broadcast MsgType=0x%02X\r\n", msg_type);
+    log_debug("Broadcast MsgType=0x%02X", msg_type);
 
     /* 广播无人 ACK，使用 TF_SendSimple 发后即忘 */
     return TF_SendSimple(tf, type, data, len);

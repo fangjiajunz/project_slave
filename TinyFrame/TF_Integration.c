@@ -1,3 +1,6 @@
+#define LOG_TAG "TF"
+#include "log.h"
+
 #include "TinyFrame.h"
 
 /**
@@ -9,7 +12,6 @@
  * 另外，如果你想使用监听器超时功能，请记得定期调用 TF_Tick()。
  */
 #include "main.h"
-#include "usbd_cdc_if.h"
 
 // TX 等待超时时间 (毫秒)
 #define TF_TX_TIMEOUT_MS  1000
@@ -27,7 +29,7 @@ void TF_WriteImpl(TinyFrame *tf, const uint8_t *buff, uint32_t len)
     {
         if (HAL_GetTick() - timeout_start > TF_TX_TIMEOUT_MS)
         {
-            usb_printf("[WARN] TX wait timeout, force reset\r\n");
+            log_warn("TX wait timeout, force reset");
             context_e22.is_tx = false;
             e22_demo_receive();  // 强制恢复接收模式
             break;
@@ -43,7 +45,7 @@ void TF_WriteImpl(TinyFrame *tf, const uint8_t *buff, uint32_t len)
     {
         if (HAL_GetTick() - timeout_start > TF_TX_TIMEOUT_MS)
         {
-            usb_printf("[WARN] TX done timeout, force reset\r\n");
+            log_warn("TX done timeout, force reset");
             context_e22.is_tx = false;
             break;
         }
