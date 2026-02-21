@@ -36,6 +36,7 @@
 #include "TinyFrame.h"
 #include "tf_multinode.h"
 #include "usb_uart.h"
+#include "app.h"
 
 #define TF_SLAVE_ADDRESS 1 /* 从机地址 (1-14) */
 
@@ -159,6 +160,9 @@ int main(void)
     /* 设置日志级别 */
     log_set_level(LOG_DEBUG);
 
+    /* 初始化 NVM 并加载配置 */
+    app_start();
+
     /* 初始化 LoRa 模组 */
     e22_demo_init();
 
@@ -173,7 +177,7 @@ int main(void)
 
     log_info("System Ready!");
     /* USER CODE END 2 */
-
+//	app_config_save();
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1)

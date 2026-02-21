@@ -128,14 +128,14 @@
                 "d:\\lora\\11\\project_slave\\TinyFrame",
                 "d:\\lora\\11\\project_slave\\user\\log",
                 "d:\\lora\\11\\project_slave\\bsp",
+                "d:\\lora\\11\\project_slave\\app",
                 "D:\\keil5\\ARM\\ARMCC\\include",
                 "d:\\lora\\11\\project_slave\\MDK-ARM",
                 "d:\\lora\\11\\project_slave\\Core\\Src",
                 "d:\\lora\\11\\project_slave\\Drivers\\STM32F1xx_HAL_Driver\\Src",
                 "d:\\lora\\11\\project_slave\\Middlewares\\ST\\STM32_USB_Device_Library\\Core\\Src",
                 "d:\\lora\\11\\project_slave\\Middlewares\\ST\\STM32_USB_Device_Library\\Class\\CDC\\Src",
-                "d:\\lora\\11\\project_slave\\Middlewares\\u8g2Lib\\src",
-                "d:\\lora\\11\\project_slave\\app"
+                "d:\\lora\\11\\project_slave\\Middlewares\\u8g2Lib\\src"
             ],
             "defines": [
                 "USE_HAL_DRIVER",
