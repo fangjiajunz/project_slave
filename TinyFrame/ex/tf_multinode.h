@@ -18,32 +18,34 @@
 #ifndef TF_MULTINODE_H
 #define TF_MULTINODE_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+
 #include "TinyFrame.h"
 
 /* ========================== 地址定义 ========================== */
 
-#define TF_ADDR_BROADCAST       0x00    /* 广播地址 */
-#define TF_ADDR_SLAVE_MIN       0x01    /* 从机地址最小值 */
-#define TF_ADDR_SLAVE_MAX       0x0E    /* 从机地址最大值 */
-#define TF_ADDR_RESERVED        0x0F    /* 保留地址 */
-#define TF_ADDR_MASTER          0x00    /* 主机响应时使用的地址 (与广播相同) */
+#define TF_ADDR_BROADCAST 0x00 /* 广播地址 */
+#define TF_ADDR_SLAVE_MIN 0x01 /* 从机地址最小值 */
+#define TF_ADDR_SLAVE_MAX 0x0E /* 从机地址最大值 */
+#define TF_ADDR_RESERVED 0x0F  /* 保留地址 */
+#define TF_ADDR_MASTER 0x00    /* 主机响应时使用的地址 (与广播相同) */
 
 /* ========================== 消息类型枚举 ========================== */
 
-typedef enum {
-    TF_MSG_ACK          = 0x00,     /* 确认响应 */
-    TF_MSG_NACK         = 0x01,     /* 否定响应 */
-    TF_MSG_HEARTBEAT    = 0x02,     /* 心跳包 */
-    TF_MSG_LED_CTRL     = 0x03,     /* LED 控制命令 */
-    TF_MSG_STATUS_REQ   = 0x04,     /* 状态请求 */
-    TF_MSG_STATUS_RSP   = 0x05,     /* 状态响应 */
-    TF_MSG_DATA         = 0x06,     /* 数据传输 */
-    TF_MSG_CONFIG       = 0x07,     /* 配置命令 */
+typedef enum
+{
+    TF_MSG_ACK = 0x00,        /* 确认响应 */
+    TF_MSG_NACK = 0x01,       /* 否定响应 */
+    TF_MSG_HEARTBEAT = 0x02,  /* 心跳包 */
+    TF_MSG_LED_CTRL = 0x03,   /* LED 控制命令 */
+    TF_MSG_STATUS_REQ = 0x04, /* 状态请求 */
+    TF_MSG_STATUS_RSP = 0x05, /* 状态响应 */
+    TF_MSG_DATA = 0x06,       /* 数据传输 */
+    TF_MSG_CONFIG = 0x07,     /* 配置命令 */
     /* 0x08 - 0x0F 预留给用户自定义 */
-    TF_MSG_USER_BASE    = 0x08,     /* 用户自定义消息起始 */
-    TF_MSG_MAX          = 0x0F      /* 最大消息类型 */
+    TF_MSG_USER_BASE = 0x08, /* 用户自定义消息起始 */
+    TF_MSG_MAX = 0x0F        /* 最大消息类型 */
 } TF_MsgType;
 
 /* ========================== TYPE 字段操作宏 ========================== */
@@ -54,21 +56,21 @@ typedef enum {
  * @param  msg:  消息类型 (0x0-0xF)
  * @return TYPE 字段值
  */
-#define TF_MAKE_TYPE(addr, msg)     ((TF_TYPE)(((addr) << 4) | ((msg) & 0x0F)))
+#define TF_MAKE_TYPE(addr, msg) ((TF_TYPE)(((addr) << 4) | ((msg) & 0x0F)))
 
 /**
  * @brief  从 TYPE 字段提取地址
  * @param  type: TYPE 字段值
  * @return 地址 (0x0-0xF)
  */
-#define TF_GET_ADDR(type)           ((uint8_t)(((type) & 0xF0) >> 4))
+#define TF_GET_ADDR(type) ((uint8_t)(((type) & 0xF0) >> 4))
 
 /**
  * @brief  从 TYPE 字段提取消息类型
  * @param  type: TYPE 字段值
  * @return 消息类型 (0x0-0xF)
  */
-#define TF_GET_MSG(type)            ((uint8_t)((type) & 0x0F))
+#define TF_GET_MSG(type) ((uint8_t)((type) & 0x0F))
 
 /**
  * @brief  检查地址是否匹配 (本机地址或广播)
@@ -84,37 +86,58 @@ typedef enum {
  * @param  type: TYPE 字段值
  * @return 1 = 广播, 0 = 单播
  */
-#define TF_IS_BROADCAST(type)       (TF_GET_ADDR(type) == TF_ADDR_BROADCAST)
+#define TF_IS_BROADCAST(type) (TF_GET_ADDR(type) == TF_ADDR_BROADCAST)
 
 /* ========================== LED 控制命令定义 ========================== */
 
-typedef enum {
-    LED_CMD_OFF     = 0x00,     /* LED 关闭 */
-    LED_CMD_ON      = 0x01,     /* LED 开启 */
-    LED_CMD_TOGGLE  = 0x02,     /* LED 翻转 */
+typedef enum
+{
+    LED_CMD_OFF = 0x00,    /* LED 关闭 */
+    LED_CMD_ON = 0x01,     /* LED 开启 */
+    LED_CMD_TOGGLE = 0x02, /* LED 翻转 */
 } TF_LedCmd;
 
 /* ========================== 状态响应结构 ========================== */
 
-typedef struct {
-    uint8_t node_addr;          /* 节点地址 */
-    uint8_t led_state;          /* LED 状态 */
-    uint8_t error_code;         /* 错误代码 */
+/* 传感器数据 */
+typedef struct
+{
+    int16_t  temperature;    /* 温度 (x10, 如 251 = 25.1°C) */
+    uint16_t humidity;       /* 湿度 (x10, 如 655 = 65.5%) */
+    uint16_t light;          /* 光照强度 (lux) */
+    uint16_t ph;             /* PH值 (x100, 如 700 = 7.00) */
+} sensor_cb;
+
+/* 控制器状态 */
+typedef struct
+{
+    uint8_t fan;             /* 风扇 (0=关, 1=开) */
+    uint8_t heater;          /* 加热 (0=关, 1=开) */
+    uint8_t pump;            /* 水泵 (0=关, 1=开) */
+} control_cb;
+
+typedef struct
+{
+    uint8_t    node_addr;    /* 节点地址 */
+    uint8_t    error_code;   /* 错误代码 */
+    int8_t     rssi;         /* 信号强度 */
+    sensor_cb  sensor;       /* 传感器数据 */
+    control_cb ctrl;         /* 控制器状态 */
 } TF_StatusData;
 
 /* ========================== 时间槽防冲突配置 ========================== */
 
 /* 时间槽周期 (ms) - 所有从机共享一个周期 */
-#define TF_SLOT_PERIOD_MS       100
+#define TF_SLOT_PERIOD_MS 100
 
 /* 每个从机的时间槽宽度 (ms) */
-#define TF_SLOT_WIDTH_MS        20
+#define TF_SLOT_WIDTH_MS 20
 
 /* 计算从机的发送时间窗口起点 */
-#define TF_SLOT_START(addr)     (((addr) - 1) * TF_SLOT_WIDTH_MS)
+#define TF_SLOT_START(addr) (((addr) - 1) * TF_SLOT_WIDTH_MS)
 
 /* 检查当前是否在本机时间槽内 */
-#define TF_IN_MY_SLOT(tick_ms, addr) \
+#define TF_IN_MY_SLOT(tick_ms, addr)                           \
     (((tick_ms) % TF_SLOT_PERIOD_MS) >= TF_SLOT_START(addr) && \
      ((tick_ms) % TF_SLOT_PERIOD_MS) < (TF_SLOT_START(addr) + TF_SLOT_WIDTH_MS))
 
@@ -130,15 +153,17 @@ typedef struct {
  * TF_ID 当前为 uint8_t (TF_ID_BYTES=1)，范围 0-255，
  * 缓冲区大小 16 足以覆盖短期内的所有活跃记录。
  */
-#define TF_DEDUP_BUF_SIZE   16
+#define TF_DEDUP_BUF_SIZE 16
 
-typedef struct {
-    struct {
-        uint8_t addr;                    /* 来源地址 */
-        TF_ID   id;                      /* Frame ID */
-    } entries[TF_DEDUP_BUF_SIZE];        /* 环形数组 */
-    uint8_t write_idx;                   /* 下一个写入位置 */
-    uint8_t count;                       /* 已记录数量 (最大 = TF_DEDUP_BUF_SIZE) */
+typedef struct
+{
+    struct
+    {
+        uint8_t addr;             /* 来源地址 */
+        TF_ID id;                 /* Frame ID */
+    } entries[TF_DEDUP_BUF_SIZE]; /* 环形数组 */
+    uint8_t write_idx;            /* 下一个写入位置 */
+    uint8_t count;                /* 已记录数量 (最大 = TF_DEDUP_BUF_SIZE) */
 } TF_DedupBuf;
 
 /**
@@ -161,19 +186,22 @@ static inline bool TF_Dedup_IsDuplicate(TF_DedupBuf *buf, uint8_t addr, TF_ID id
 {
     /* 在已有记录中查找 (addr + id) 对 */
     uint8_t n = (buf->count < TF_DEDUP_BUF_SIZE) ? buf->count : TF_DEDUP_BUF_SIZE;
-    for (uint8_t i = 0; i < n; i++) {
-        if (buf->entries[i].addr == addr && buf->entries[i].id == id) {
-            return true;    /* 重复 */
+    for (uint8_t i = 0; i < n; i++)
+    {
+        if (buf->entries[i].addr == addr && buf->entries[i].id == id)
+        {
+            return true; /* 重复 */
         }
     }
     /* 新条目，记录到环形缓冲区 */
     buf->entries[buf->write_idx].addr = addr;
-    buf->entries[buf->write_idx].id   = id;
+    buf->entries[buf->write_idx].id = id;
     buf->write_idx = (buf->write_idx + 1) % TF_DEDUP_BUF_SIZE;
-    if (buf->count < TF_DEDUP_BUF_SIZE) {
+    if (buf->count < TF_DEDUP_BUF_SIZE)
+    {
         buf->count++;
     }
-    return false;   /* 新帧 */
+    return false; /* 新帧 */
 }
 
 #endif /* TF_MULTINODE_H */

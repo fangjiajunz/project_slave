@@ -18,6 +18,7 @@
 #include "log.h"
 
 #include "tf_master.h"
+#include "main.h"
 #include <string.h>
 
 /* ========================== 内部变量 ========================== */
@@ -44,6 +45,60 @@ static TF_Master_DataCallback s_data_callback = NULL;
 
 /* 去重缓冲区 — 检测从机重传导致的重复上报 */
 static TF_DedupBuf s_dedup;
+
+/* ========================== 轮询状态机内部变量 ========================== */
+
+typedef enum {
+    POLL_IDLE,      /* 等待轮次间隔到期 */
+    POLL_SENDING,   /* 向当前从机发送 STATUS_REQ */
+    POLL_WAITING,   /* 等待从机 STATUS_RSP 响应或超时 */
+} PollState;
+
+static struct {
+    uint8_t  slave_addrs[TF_MASTER_MAX_POLL_SLAVES]; /* 从机地址列表 */
+    uint8_t  count;             /* 从机数量 */
+    uint8_t  current;           /* 当前轮询索引 */
+    uint32_t round_interval_ms; /* 轮次间隔 */
+    uint32_t last_round_tick;   /* 上一轮完成时的 tick */
+    PollState state;            /* 状态机状态 */
+    bool     got_response;      /* 收到响应标志 */
+    bool     response_online;   /* 响应是否成功 (true=在线) */
+    const uint8_t *response_data; /* 响应数据 */
+    TF_LEN   response_len;     /* 响应数据长度 */
+    bool     enabled;           /* 是否已配置 */
+} s_poll;
+
+static TF_Master_PollCallback s_poll_callback = NULL;
+
+/* ========================== 轮询 ID 监听器 / 超时处理 ========================== */
+
+/**
+ * @brief  轮询响应监听器 — 收到从机 STATUS_RSP 时触发
+ */
+static TF_Result Poll_ResponseListener(TinyFrame *tf, TF_Msg *msg)
+{
+    uint8_t msg_type = TF_GET_MSG(msg->type);
+
+    if (msg_type == TF_MSG_STATUS_RSP || msg_type == TF_MSG_ACK) {
+        s_poll.got_response = true;
+        s_poll.response_online = true;
+        s_poll.response_data = msg->data;
+        s_poll.response_len = msg->len;
+    }
+    return TF_CLOSE;
+}
+
+/**
+ * @brief  轮询超时处理 — 从机未响应 STATUS_REQ
+ */
+static TF_Result Poll_TimeoutHandler(TinyFrame *tf)
+{
+    s_poll.got_response = true;
+    s_poll.response_online = false;
+    s_poll.response_data = NULL;
+    s_poll.response_len = 0;
+    return TF_CLOSE;
+}
 
 /* ========================== 内部函数 ========================== */
 
@@ -80,8 +135,8 @@ static TF_Result Master_GenericListener(TinyFrame *tf, TF_Msg *msg)
         case TF_MSG_STATUS_RSP:
             if (msg->len >= sizeof(TF_StatusData)) {
                 TF_StatusData *status = (TF_StatusData *)msg->data;
-                log_info("Status: Addr=%d, LED=%d, Err=%d",
-                       status->node_addr, status->led_state, status->error_code);
+                log_info("Status: Addr=%d, Err=%d, RSSI=%d",
+                       status->node_addr, status->error_code, status->rssi);
             }
             break;
         case TF_MSG_DATA:
@@ -298,4 +353,93 @@ bool TF_Master_BroadcastLedCmd(TinyFrame *tf, TF_LedCmd led_cmd)
 bool TF_Master_SendHeartbeat(TinyFrame *tf, uint8_t slave_addr, TF_Listener listener)
 {
     return TF_Master_QueryTo(tf, slave_addr, TF_MSG_HEARTBEAT, NULL, 0, listener);
+}
+
+/* ========================== 轮询 API 实现 ========================== */
+
+void TF_Master_PollSetup(const uint8_t *slave_addrs, uint8_t count,
+                          uint32_t round_interval_ms)
+{
+    if (count > TF_MASTER_MAX_POLL_SLAVES) {
+        count = TF_MASTER_MAX_POLL_SLAVES;
+    }
+    memcpy(s_poll.slave_addrs, slave_addrs, count);
+    s_poll.count = count;
+    s_poll.round_interval_ms = round_interval_ms;
+    s_poll.current = 0;
+    s_poll.state = POLL_IDLE;
+    s_poll.got_response = false;
+    s_poll.last_round_tick = HAL_GetTick();
+    s_poll.enabled = true;
+
+    log_info("Poll setup: %d slaves, interval=%lu ms", count, round_interval_ms);
+}
+
+void TF_Master_SetPollCallback(TF_Master_PollCallback callback)
+{
+    s_poll_callback = callback;
+}
+
+void TF_Master_PollTick(TinyFrame *tf)
+{
+    if (!s_poll.enabled || s_poll.count == 0) {
+        return;
+    }
+
+    uint32_t now = HAL_GetTick();
+
+    switch (s_poll.state) {
+        case POLL_IDLE:
+            /* 等待轮次间隔到期 */
+            if ((now - s_poll.last_round_tick) >= s_poll.round_interval_ms) {
+                s_poll.current = 0;
+                s_poll.state = POLL_SENDING;
+            }
+            break;
+
+        case POLL_SENDING: {
+            /* 向当前从机发送 STATUS_REQ */
+            uint8_t addr = s_poll.slave_addrs[s_poll.current];
+            TF_TYPE type = TF_MAKE_TYPE(addr, TF_MSG_STATUS_REQ);
+
+            log_debug("Poll Slave %d -> STATUS_REQ", addr);
+
+            s_poll.got_response = false;
+            TF_QuerySimple(tf, type, NULL, 0,
+                           Poll_ResponseListener, Poll_TimeoutHandler,
+                           TF_MASTER_POLL_TIMEOUT);
+            s_poll.state = POLL_WAITING;
+            break;
+        }
+
+        case POLL_WAITING:
+            /* 等待响应或超时 (由 Poll_ResponseListener / Poll_TimeoutHandler 设置标志) */
+            if (s_poll.got_response) {
+                uint8_t addr = s_poll.slave_addrs[s_poll.current];
+
+                if (s_poll.response_online) {
+                    log_info("Slave %d online", addr);
+                } else {
+                    log_warn("Slave %d timeout", addr);
+                }
+
+                /* 调用用户回调 */
+                if (s_poll_callback != NULL) {
+                    s_poll_callback(addr, s_poll.response_online,
+                                    s_poll.response_data, s_poll.response_len);
+                }
+
+                /* 推进到下一个从机 */
+                s_poll.current++;
+                if (s_poll.current < s_poll.count) {
+                    s_poll.state = POLL_SENDING;
+                } else {
+                    /* 一轮完成 */
+                    s_poll.last_round_tick = now;
+                    s_poll.state = POLL_IDLE;
+                    log_debug("Poll round complete");
+                }
+            }
+            break;
+    }
 }

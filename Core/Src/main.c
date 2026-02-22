@@ -31,12 +31,11 @@
 #include <string.h>
 
 #define LOG_TAG "App"
-#include "log.h"
-
 #include "TinyFrame.h"
+#include "app.h"
+#include "log.h"
 #include "tf_multinode.h"
 #include "usb_uart.h"
-#include "app.h"
 
 #define TF_SLAVE_ADDRESS 1 /* 从机地址 (1-14) */
 
@@ -63,6 +62,8 @@
 /* USER CODE BEGIN PV */
 TinyFrame tf;
 static bool s_led_state = false;
+static uint8_t s_key_event = 0; /* 按键事件缓存，轮询时上报后清零 */
+static int8_t s_last_rssi = 0;  /* 最近一次接收 RSSI */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -117,6 +118,35 @@ static void Slave_LedCallback(TF_LedCmd led_cmd)
     }
 }
 
+/**
+ * @brief  从机状态查询回调 — 主机轮询时调用，填充当前状态
+ */
+static void Slave_StatusCallback(TF_StatusData *status)
+{
+    status->node_addr   = TF_SLAVE_ADDRESS;
+    status->error_code  = 0;
+    status->rssi        = s_last_rssi;
+
+    /* 传感器数据 (暂填测试值，接入实际传感器后替换) */
+    status->sensor.temperature = 0;
+    status->sensor.humidity    = 0;
+    status->sensor.light       = 0;
+    status->sensor.ph          = 0;
+
+    /* 控制器状态 */
+    status->ctrl.fan    = 0;
+    status->ctrl.heater = 0;
+    status->ctrl.pump   = 0;
+
+    /* 按键事件上报后清零 */
+    if (s_key_event)
+    {
+        status->error_code = s_key_event;
+        s_key_event = 0;
+        log_info("Report key event in poll response");
+    }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -151,8 +181,8 @@ int main(void)
     // MX_USB_DEVICE_Init();  // 由uart_init内部调用
     MX_TIM2_Init();
     /* USER CODE BEGIN 2 */
-    HAL_TIM_Base_Start_IT(&htim2);  /* 启动 TIM2 1ms 定时中断 */
-    uart_init();  // 初始化USB串口
+    HAL_TIM_Base_Start_IT(&htim2); /* 启动 TIM2 1ms 定时中断 */
+    uart_init();                   // 初始化USB串口
 
     /* 等待 USB 枚举完成 */
     HAL_Delay(5000);
@@ -170,6 +200,7 @@ int main(void)
     log_info("=== SLAVE MODE (addr=%d) ===", TF_SLAVE_ADDRESS);
     TF_Slave_Init(&tf, TF_SLAVE_ADDRESS);
     TF_Slave_SetLedCallback(Slave_LedCallback);
+    TF_Slave_SetStatusCallback(Slave_StatusCallback);
     log_info("Press ENTER to send key event to Master");
 
     /* 进入 LoRa 接收模式 */
@@ -177,7 +208,7 @@ int main(void)
 
     log_info("System Ready!");
     /* USER CODE END 2 */
-//	app_config_save();
+    //	app_config_save();
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1)
@@ -186,7 +217,8 @@ int main(void)
         {
             static uint32_t last_tick = 0;
             uint32_t now = HAL_GetTick();
-            while (last_tick < now) {
+            while (last_tick < now)
+            {
                 TF_Tick(&tf);
                 last_tick++;
             }
@@ -202,16 +234,16 @@ int main(void)
         int8_t rssi;
         if (e22_demo_check_rx_done(rx_buf, &rx_len, &rssi))
         {
+            s_last_rssi = rssi;
             log_debug("RX %d bytes, RSSI=%d", rx_len, rssi);
             TF_Accept(&tf, rx_buf, rx_len);
         }
 
-        /* 3. 从机: 按键检测，发送数据给主机 */
+        /* 3. 从机: 按键检测，缓存事件等待主机轮询时上报 */
         if (key_check_press(KEY_NAME_ENTER))
         {
-            uint8_t key_event = 0x01;  /* 按键事件代码 */
-            log_info("Key ENTER -> Send to Master");
-            TF_Slave_ReportEvent(&tf, key_event);
+            s_key_event = 0x01;
+            log_info("Key ENTER pressed, waiting for poll");
         }
 
         /* USER CODE END WHILE */

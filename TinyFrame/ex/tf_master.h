@@ -28,6 +28,12 @@
 /* 重试缓存最大负载字节数 */
 #define TF_MASTER_MAX_PAYLOAD       32
 
+/* 轮询最大从机数 */
+#define TF_MASTER_MAX_POLL_SLAVES   8
+
+/* 轮询等待响应超时 (ms) */
+#define TF_MASTER_POLL_TIMEOUT      500
+
 /* ========================== 回调函数类型 ========================== */
 
 /**
@@ -128,5 +134,38 @@ bool TF_Master_BroadcastLedCmd(TinyFrame *tf, TF_LedCmd led_cmd);
  * @return 成功返回 true
  */
 bool TF_Master_SendHeartbeat(TinyFrame *tf, uint8_t slave_addr, TF_Listener listener);
+
+/* ========================== 轮询 API ========================== */
+
+/**
+ * @brief  轮询回调 — 每轮询一个从机后调用
+ * @param  slave_addr: 从机地址
+ * @param  online:     true = 收到响应, false = 超时
+ * @param  data:       响应数据指针 (离线时为 NULL)
+ * @param  len:        响应数据长度
+ */
+typedef void (*TF_Master_PollCallback)(uint8_t slave_addr, bool online,
+                                       const uint8_t *data, TF_LEN len);
+
+/**
+ * @brief  配置轮询从机列表和轮次间隔
+ * @param  slave_addrs:       从机地址数组
+ * @param  count:             从机数量 (不超过 TF_MASTER_MAX_POLL_SLAVES)
+ * @param  round_interval_ms: 两轮轮询之间的间隔 (ms)
+ */
+void TF_Master_PollSetup(const uint8_t *slave_addrs, uint8_t count,
+                          uint32_t round_interval_ms);
+
+/**
+ * @brief  设置轮询响应回调
+ * @param  callback: 回调函数
+ */
+void TF_Master_SetPollCallback(TF_Master_PollCallback callback);
+
+/**
+ * @brief  主循环调用 — 驱动轮询状态机
+ * @param  tf: TinyFrame 实例
+ */
+void TF_Master_PollTick(TinyFrame *tf);
 
 #endif /* TF_MASTER_H */
