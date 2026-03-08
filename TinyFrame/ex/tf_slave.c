@@ -14,6 +14,7 @@
 static uint8_t s_slave_addr = 0;                    /* 本机地址 */
 static TF_Slave_LedCallback s_led_callback = NULL;  /* LED 回调 */
 static TF_Slave_StatusCallback s_status_callback = NULL;  /* 状态回调 */
+static TF_Slave_ConfigCallback s_config_callback = NULL;  /* CONFIG 控制回调 */
 
 /**
  * 从机上报重试上下文 — 保存当前待确认的上报消息参数。
@@ -133,7 +134,11 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             break;
 
         case TF_MSG_CONFIG:
-            log_debug("Config command");
+            /* CONFIG 控制命令: payload[0]=设备ID, payload[1]=动作值 */
+            log_debug("Config command, len=%d", msg->len);
+            if (msg->len >= 2 && s_config_callback != NULL) {
+                s_config_callback(msg->data[0], msg->data[1]);
+            }
             if (!is_broadcast) {
                 TF_Slave_SendAck(tf, msg);
             }
@@ -195,6 +200,11 @@ void TF_Slave_SetLedCallback(TF_Slave_LedCallback callback)
 void TF_Slave_SetStatusCallback(TF_Slave_StatusCallback callback)
 {
     s_status_callback = callback;
+}
+
+void TF_Slave_SetConfigCallback(TF_Slave_ConfigCallback callback)
+{
+    s_config_callback = callback;
 }
 
 bool TF_Slave_SendAck(TinyFrame *tf, TF_Msg *msg)

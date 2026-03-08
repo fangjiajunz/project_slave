@@ -355,6 +355,19 @@ bool TF_Master_SendHeartbeat(TinyFrame *tf, uint8_t slave_addr, TF_Listener list
     return TF_Master_QueryTo(tf, slave_addr, TF_MSG_HEARTBEAT, NULL, 0, listener);
 }
 
+/**
+ * @brief  发送 CONFIG 控制命令到指定从机 (经 SendTo，可靠)
+ *
+ * 组装 payload = [设备ID, 动作值]，通过 TF_MSG_CONFIG 发送。
+ * 内部调用 SendTo，自动获得 ACK + 超时重试。
+ */
+bool TF_Master_SendCtrlCmd(TinyFrame *tf, uint8_t slave_addr,
+                           uint8_t dev_id, uint8_t action)
+{
+    uint8_t data[2] = { dev_id, action };
+    return TF_Master_SendTo(tf, slave_addr, TF_MSG_CONFIG, data, 2);
+}
+
 /* ========================== 轮询 API 实现 ========================== */
 
 void TF_Master_PollSetup(const uint8_t *slave_addrs, uint8_t count,

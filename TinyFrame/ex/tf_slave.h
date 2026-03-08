@@ -50,6 +50,18 @@ typedef void (*TF_Slave_LedCallback)(TF_LedCmd led_cmd);
  */
 typedef void (*TF_Slave_StatusCallback)(TF_StatusData *status);
 
+/**
+ * @brief  CONFIG 控制命令回调函数类型
+ *
+ * 主机通过 TF_MSG_CONFIG 发送控制命令，payload 格式:
+ *   payload[0] = 设备 ID (TF_CTRL_DEV_FAN / HEATER / PUMP)
+ *   payload[1] = 动作值 (TF_CTRL_ACT_OFF / ON)
+ *
+ * @param  dev_id: 设备 ID
+ * @param  action: 动作值 (0=关, 1=开)
+ */
+typedef void (*TF_Slave_ConfigCallback)(uint8_t dev_id, uint8_t action);
+
 /* ========================== API 函数 ========================== */
 
 /**
@@ -80,6 +92,12 @@ void TF_Slave_SetLedCallback(TF_Slave_LedCallback callback);
  * @param  callback: 回调函数，收到 TF_MSG_STATUS_REQ 时调用
  */
 void TF_Slave_SetStatusCallback(TF_Slave_StatusCallback callback);
+
+/**
+ * @brief  设置 CONFIG 控制命令回调函数
+ * @param  callback: 回调函数，收到 TF_MSG_CONFIG 时调用
+ */
+void TF_Slave_SetConfigCallback(TF_Slave_ConfigCallback callback);
 
 /**
  * @brief  发送 ACK 响应

@@ -135,6 +135,21 @@ bool TF_Master_BroadcastLedCmd(TinyFrame *tf, TF_LedCmd led_cmd);
  */
 bool TF_Master_SendHeartbeat(TinyFrame *tf, uint8_t slave_addr, TF_Listener listener);
 
+/**
+ * @brief  发送 CONFIG 控制命令到指定从机 (经 SendTo，可靠)
+ *
+ * 通过 TF_MSG_CONFIG 发送统一控制命令，payload = [设备ID, 动作值]。
+ * 经过 SendTo 自动获得 ACK + 超时重试的可靠性。
+ *
+ * @param  tf:         TinyFrame 实例
+ * @param  slave_addr: 目标从机地址
+ * @param  dev_id:     设备 ID (TF_CTRL_DEV_FAN / HEATER / PUMP)
+ * @param  action:     动作值 (TF_CTRL_ACT_OFF / ON)
+ * @return 成功返回 true
+ */
+bool TF_Master_SendCtrlCmd(TinyFrame *tf, uint8_t slave_addr,
+                           uint8_t dev_id, uint8_t action);
+
 /* ========================== 轮询 API ========================== */
 
 /**

@@ -97,6 +97,26 @@ typedef enum
     LED_CMD_TOGGLE = 0x02, /* LED 翻转 */
 } TF_LedCmd;
 
+/* ========================== CONFIG 控制命令定义 ========================== */
+
+/**
+ * TF_MSG_CONFIG 统一控制命令格式:
+ *   payload[0] = 设备 ID (TF_CTRL_DEV_xxx)
+ *   payload[1] = 动作值 (TF_CTRL_ACT_xxx)
+ *
+ * 主机通过 TF_Master_SendCtrlCmd() 发送，从机在 CONFIG 回调中解析。
+ * 所有外设控制统一走此通道，避免消息类型不够用。
+ */
+
+/* 设备 ID 定义 */
+#define TF_CTRL_DEV_FAN     0x01    /* 风扇 */
+#define TF_CTRL_DEV_HEATER  0x02    /* 加热器 */
+#define TF_CTRL_DEV_PUMP    0x03    /* 水泵 */
+
+/* 动作值定义 */
+#define TF_CTRL_ACT_OFF     0x00    /* 关闭 */
+#define TF_CTRL_ACT_ON      0x01    /* 开启 */
+
 /* ========================== 状态响应结构 ========================== */
 
 /* 传感器数据 */
@@ -105,7 +125,7 @@ typedef struct
     int16_t  temperature;    /* 温度 (x10, 如 251 = 25.1°C) */
     uint16_t humidity;       /* 湿度 (x10, 如 655 = 65.5%) */
     uint16_t light;          /* 光照强度 (lux) */
-    uint16_t ph;             /* PH值 (x100, 如 700 = 7.00) */
+    uint16_t C02;             /* PH值 (x100, 如 700 = 7.00) */
 } sensor_cb;
 
 /* 控制器状态 */

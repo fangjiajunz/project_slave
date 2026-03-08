@@ -37,7 +37,7 @@
 #include "tf_multinode.h"
 #include "usb_uart.h"
 
-#define TF_SLAVE_ADDRESS 1 /* 从机地址 (1-14) */
+#define TF_SLAVE_ADDRESS 2 /* 从机地址 (1-14) */
 
 #include "tf_slave.h"
 /* USER CODE END Includes */
@@ -61,8 +61,7 @@
 
 /* USER CODE BEGIN PV */
 TinyFrame tf;
-static bool s_led_state = false;
-static uint8_t s_key_event = 0; /* 按键事件缓存，轮询时上报后清零 */
+
 static int8_t s_last_rssi = 0;  /* 最近一次接收 RSSI */
 /* USER CODE END PV */
 
@@ -84,66 +83,57 @@ void serial_on_data_received(uint8_t *buffer, uint16_t len)
 /* ========================== 从机回调函数 ========================== */
 
 /**
- * @brief  从机 LED 控制回调
- */
-static void Slave_LedCallback(TF_LedCmd led_cmd)
-{
-    switch (led_cmd)
-    {
-        case LED_CMD_OFF:
-            s_led_state = false;
-            gpio_led_rx_off();
-            log_info("LED OFF");
-            break;
-        case LED_CMD_ON:
-            s_led_state = true;
-            gpio_led_rx_on();
-            log_info("LED ON");
-            break;
-        case LED_CMD_TOGGLE:
-            s_led_state = !s_led_state;
-            if (s_led_state)
-            {
-                gpio_led_rx_on();
-            }
-            else
-            {
-                gpio_led_rx_off();
-            }
-            log_info("LED TOGGLE -> %d", s_led_state);
-            break;
-        default:
-            log_warn("Unknown LED cmd: %d", led_cmd);
-            break;
-    }
-}
-
-/**
  * @brief  从机状态查询回调 — 主机轮询时调用，填充当前状态
  */
 static void Slave_StatusCallback(TF_StatusData *status)
 {
+	static uint32_t num=0;
     status->node_addr   = TF_SLAVE_ADDRESS;
     status->error_code  = 0;
     status->rssi        = s_last_rssi;
 
     /* 传感器数据 (暂填测试值，接入实际传感器后替换) */
-    status->sensor.temperature = 0;
-    status->sensor.humidity    = 0;
-    status->sensor.light       = 0;
-    status->sensor.ph          = 0;
+    status->sensor.temperature = num++;
+    status->sensor.humidity    = num++;
+    status->sensor.light       = num++;
+    status->sensor.ph          = num++;
 
     /* 控制器状态 */
     status->ctrl.fan    = 0;
     status->ctrl.heater = 0;
     status->ctrl.pump   = 0;
 
-    /* 按键事件上报后清零 */
-    if (s_key_event)
+
+}
+
+/**
+ * @brief  从机 CONFIG 控制回调 — 主机发送设备控制命令时调用
+ *
+ * payload 格式: [设备ID, 动作值]
+ * 当前为测试阶段，仅输出日志，后续替换为实际 GPIO 控制。
+ *
+ * @param  dev_id: 设备 ID (TF_CTRL_DEV_FAN / HEATER / PUMP)
+ * @param  action: 动作值 (0=关, 1=开)
+ */
+static void Slave_ConfigCallback(uint8_t dev_id, uint8_t action)
+{
+    switch (dev_id)
     {
-        status->error_code = s_key_event;
-        s_key_event = 0;
-        log_info("Report key event in poll response");
+        case TF_CTRL_DEV_FAN:
+            /* TODO: 替换为实际风扇 GPIO 控制 */
+            log_info("[TEST] Fan %s", action ? "ON" : "OFF");
+            break;
+        case TF_CTRL_DEV_HEATER:
+            /* TODO: 替换为实际加热器 GPIO 控制 */
+            log_info("[TEST] Heater %s", action ? "ON" : "OFF");
+            break;
+        case TF_CTRL_DEV_PUMP:
+            /* TODO: 替换为实际水泵 GPIO 控制 */
+            log_info("[TEST] Pump %s", action ? "ON" : "OFF");
+            break;
+        default:
+            log_warn("Unknown device ID: 0x%02X", dev_id);
+            break;
     }
 }
 
@@ -199,8 +189,8 @@ int main(void)
     /* 初始化 TinyFrame */
     log_info("=== SLAVE MODE (addr=%d) ===", TF_SLAVE_ADDRESS);
     TF_Slave_Init(&tf, TF_SLAVE_ADDRESS);
-    TF_Slave_SetLedCallback(Slave_LedCallback);
     TF_Slave_SetStatusCallback(Slave_StatusCallback);
+    TF_Slave_SetConfigCallback(Slave_ConfigCallback);
     log_info("Press ENTER to send key event to Master");
 
     /* 进入 LoRa 接收模式 */
@@ -239,12 +229,6 @@ int main(void)
             TF_Accept(&tf, rx_buf, rx_len);
         }
 
-        /* 3. 从机: 按键检测，缓存事件等待主机轮询时上报 */
-        if (key_check_press(KEY_NAME_ENTER))
-        {
-            s_key_event = 0x01;
-            log_info("Key ENTER pressed, waiting for poll");
-        }
 
         /* USER CODE END WHILE */
 

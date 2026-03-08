@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(copy /Y \"D:\\\\lora\\\\11\\\\project_slave\\\\TinyFrame\\\\ex\\\\tf_multinode.h\" \"D:\\\\lora\\\\11\\\\project_master\\\\TinyFrame\\\\ex\\\\tf_multinode.h\")",
+      "Bash(copy /Y \"D:\\\\lora\\\\11\\\\project_slave\\\\TinyFrame\\\\ex\\\\tf_master.h\" \"D:\\\\lora\\\\11\\\\project_master\\\\TinyFrame\\\\ex\\\\tf_master.h\")",
+      "Bash(copy /Y \"D:\\\\lora\\\\11\\\\project_slave\\\\TinyFrame\\\\ex\\\\tf_master.c\" \"D:\\\\lora\\\\11\\\\project_master\\\\TinyFrame\\\\ex\\\\tf_master.c\")"
     ]
   }
 }
