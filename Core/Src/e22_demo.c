@@ -232,6 +232,9 @@ void e22_demo_menu_config(menu_config_t *config)
  */
 void e22_demo_transmit(uint8_t *buffer, uint8_t length)
 {
+    /* 先切 STANDBY，确保离开接收模式后再配置发送参数 */
+    sx126x_set_standby(&context_e22, SX126X_STANDBY_CFG_RC);
+
     /* 发送长度 */
     pkt_cfg.pld_len_in_bytes = length;
     sx126x_set_lora_pkt_params(&context_e22, &pkt_cfg);
@@ -267,6 +270,9 @@ void e22_demo_transmit(uint8_t *buffer, uint8_t length)
  */
 void e22_demo_receive(void)
 {
+    /* 先切 STANDBY，确保状态干净 */
+    sx126x_set_standby(&context_e22, SX126X_STANDBY_CFG_RC);
+
     /* 接收长度 最大255 */
     pkt_cfg.pld_len_in_bytes = 255;
     sx126x_set_lora_pkt_params(&context_e22, &pkt_cfg);

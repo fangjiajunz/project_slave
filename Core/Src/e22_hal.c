@@ -32,8 +32,13 @@ sx126x_hal_status_t sx126x_hal_reset( const void* context )
  */
 void sx126x_hal_wait_on_busy( const void* radio )
 {
-		/* E22 BUSY 引脚高电平表示忙 需要等待 */
-		while( GPIO_PIN_SET == HAL_GPIO_ReadPin( E22_BUSY_GPIO_Port , E22_BUSY_Pin ) );
+		/* E22 BUSY 引脚高电平表示忙 需要等待，超时 100ms 防死锁 */
+		uint32_t start = HAL_GetTick();
+		while( GPIO_PIN_SET == HAL_GPIO_ReadPin( E22_BUSY_GPIO_Port , E22_BUSY_Pin ) )
+		{
+				if( HAL_GetTick() - start > 100 )
+						break;
+		}
 }
 
 /**

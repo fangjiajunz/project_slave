@@ -1360,6 +1360,16 @@
               <FileType>5</FileType>
               <FilePath>..\app\app_uart.h</FilePath>
             </File>
+            <File>
+              <FileName>app_relay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\app_relay.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_relay.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\app_relay.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
