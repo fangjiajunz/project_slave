@@ -23,8 +23,7 @@
 #define __MAIN_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -36,10 +35,10 @@ extern "C"
 #include <stdio.h>
 
 #include "application.h"
-    /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-    /* Exported types ------------------------------------------------------------*/
-    /* USER CODE BEGIN ET */
+/* Exported types ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
     typedef enum
     {
         KEY_NAME_UP = 0,
@@ -56,20 +55,20 @@ extern "C"
         int8_t rx_rssi;
     } context_e22_t;
 
-    /* USER CODE END ET */
+/* USER CODE END ET */
 
-    /* Exported constants --------------------------------------------------------*/
-    /* USER CODE BEGIN EC */
+/* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
 
-    /* USER CODE END EC */
+/* USER CODE END EC */
 
-    /* Exported macro ------------------------------------------------------------*/
-    /* USER CODE BEGIN EM */
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
 
-    /* USER CODE END EM */
+/* USER CODE END EM */
 
-    /* Exported functions prototypes ---------------------------------------------*/
-    void Error_Handler(void);
+/* Exported functions prototypes ---------------------------------------------*/
+void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
@@ -104,7 +103,7 @@ extern "C"
 #define KEY_DOWN_Pin GPIO_PIN_9
 #define KEY_DOWN_GPIO_Port GPIOB
 
-    /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
     void usb_printf(const char *format, ...);
 
     void gpio_usb_ctrl_on(void);
@@ -127,7 +126,7 @@ extern "C"
     void e22_demo_receive(void);
     void e22_demo_dio1_interrupt_callback(void);
     bool e22_demo_check_rx_done(uint8_t *buffer, uint8_t *length, int8_t *rssi);
-    /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }

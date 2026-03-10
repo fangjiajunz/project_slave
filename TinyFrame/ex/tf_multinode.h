@@ -112,6 +112,7 @@ typedef enum
 #define TF_CTRL_DEV_FAN     0x01    /* 风扇 */
 #define TF_CTRL_DEV_HEATER  0x02    /* 加热器 */
 #define TF_CTRL_DEV_PUMP    0x03    /* 水泵 */
+#define TF_CTRL_DEV_LED     0x04    /* LED */
 
 /* 动作值定义 */
 #define TF_CTRL_ACT_OFF     0x00    /* 关闭 */
@@ -124,8 +125,9 @@ typedef struct
 {
     int16_t  temperature;    /* 温度 (x10, 如 251 = 25.1°C) */
     uint16_t humidity;       /* 湿度 (x10, 如 655 = 65.5%) */
-    uint16_t light;          /* 光照强度 (lux) */
-    uint16_t C02;             /* PH值 (x100, 如 700 = 7.00) */
+    uint16_t illuminance;    /* 光照强度 (lux) */
+    uint16_t co2;            /* CO2浓度 (ppm) */
+    uint16_t soil_moisture;  /* 土壤湿度 (x10, 如 455 = 45.5%) */
 } sensor_cb;
 
 /* 控制器状态 */
@@ -134,6 +136,7 @@ typedef struct
     uint8_t fan;             /* 风扇 (0=关, 1=开) */
     uint8_t heater;          /* 加热 (0=关, 1=开) */
     uint8_t pump;            /* 水泵 (0=关, 1=开) */
+    uint8_t led;             /* LED (0=关, 1=开) */
 } control_cb;
 
 typedef struct
