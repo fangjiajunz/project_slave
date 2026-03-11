@@ -2,6 +2,7 @@
 #define APP_RELAY_H
 
 #include <stdint.h>
+
 #include "main.h"
 #include "tf_multinode.h"
 
@@ -9,20 +10,20 @@
  * 根据实际硬件修改以下宏定义
  * ================================================================== */
 
-#define RELAY_FAN_PORT      GPIOB
-#define RELAY_FAN_PIN       GPIO_PIN_0
+#define RELAY_FAN_PORT GPIOB
+#define RELAY_FAN_PIN GPIO_PIN_2
 
-#define RELAY_HEATER_PORT   GPIOB
-#define RELAY_HEATER_PIN    GPIO_PIN_1
+#define RELAY_HEATER_PORT GPIOA
+#define RELAY_HEATER_PIN GPIO_PIN_2
 
-#define RELAY_PUMP_PORT     GPIOB
-#define RELAY_PUMP_PIN      GPIO_PIN_2
+#define RELAY_PUMP_PORT GPIOB
+#define RELAY_PUMP_PIN GPIO_PIN_14
 
-#define RELAY_LED_PORT      GPIOB
-#define RELAY_LED_PIN       GPIO_PIN_3
+#define RELAY_LED_PORT LED_TX_GPIO_Port
+#define RELAY_LED_PIN LED_TX_Pin
 
 /* 继电器有效电平: 1 = 高电平驱动, 0 = 低电平驱动 */
-#define RELAY_ACTIVE_HIGH   1
+#define RELAY_ACTIVE_HIGH 1
 
 /* ========================== API ========================== */
 

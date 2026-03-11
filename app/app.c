@@ -2,9 +2,9 @@
 
 #include <string.h>
 
+#include "app_relay.h"
 #include "application.h"
 #include "nvm.h"
-
 #define LOG_TAG "APP"
 #include "log.h"
 
@@ -69,6 +69,7 @@ void app_start(void)
 {
     nvm_sys_init();
     sync_to_user_config();
+    app_relay_init();
 }
 
 void app_config_save(void)

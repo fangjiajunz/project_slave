@@ -5,16 +5,17 @@
 
 /* ========================== 内部结构 ========================== */
 
-typedef struct {
+typedef struct
+{
     GPIO_TypeDef *port;
-    uint16_t      pin;
+    uint16_t pin;
 } relay_pin_t;
 
 static const relay_pin_t s_relays[] = {
-    [TF_CTRL_DEV_FAN]    = { RELAY_FAN_PORT,    RELAY_FAN_PIN },
-    [TF_CTRL_DEV_HEATER] = { RELAY_HEATER_PORT, RELAY_HEATER_PIN },
-    [TF_CTRL_DEV_PUMP]   = { RELAY_PUMP_PORT,   RELAY_PUMP_PIN },
-    [TF_CTRL_DEV_LED]    = { RELAY_LED_PORT,    RELAY_LED_PIN },
+    [TF_CTRL_DEV_FAN] = {RELAY_FAN_PORT, RELAY_FAN_PIN},
+    [TF_CTRL_DEV_HEATER] = {RELAY_HEATER_PORT, RELAY_HEATER_PIN},
+    [TF_CTRL_DEV_PUMP] = {RELAY_PUMP_PORT, RELAY_PUMP_PIN},
+    [TF_CTRL_DEV_LED] = {RELAY_LED_PORT, RELAY_LED_PIN},
 };
 
 #define RELAY_COUNT (sizeof(s_relays) / sizeof(s_relays[0]))
@@ -43,16 +44,28 @@ static inline uint8_t level_to_action(GPIO_PinState level)
 
 void app_relay_init(void)
 {
-    /* 全部关闭 */
-    for (uint8_t i = 1; i < RELAY_COUNT; i++)
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    for (uint8_t i = 0; i < RELAY_COUNT; i++)
     {
         if (s_relays[i].port != NULL)
         {
-            HAL_GPIO_WritePin(s_relays[i].port, s_relays[i].pin,
-                              action_to_level(0));
+            /* 1. 先开启该 GPIO 端口的时钟 (极其关键!) */
+
+            /* 2. 写入默认电平（关闭），防止初始化瞬间的继电器抖动 */
+            HAL_GPIO_WritePin(s_relays[i].port, s_relays[i].pin, action_to_level(0));
+
+            /* 3. 配置 GPIO 为推挽输出 */
+            GPIO_InitStruct.Pin = s_relays[i].pin;
+            GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   // 推挽输出
+            GPIO_InitStruct.Pull = GPIO_NOPULL;           // 无需上下拉
+            GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;  // 继电器低速即可
+            HAL_GPIO_Init(s_relays[i].port, &GPIO_InitStruct);
         }
     }
-    log_info("Relay init done");
+
+    log_info("Relay init done. Count: %zu", RELAY_COUNT);
 }
 
 void app_relay_set(uint8_t dev_id, uint8_t action)

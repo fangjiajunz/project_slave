@@ -35,6 +35,7 @@
 #define LOG_TAG "App"
 #include "TinyFrame.h"
 #include "app.h"
+#include "app_adc.h"
 #include "app_relay.h"
 #include "bsp.h"
 #include "log.h"
@@ -47,7 +48,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+#include "dispDirver.h"
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -65,7 +66,9 @@
 /* USER CODE BEGIN PV */
 TinyFrame tf;
 
-static int8_t s_last_rssi = 0; /* 最近一次接收 RSSI */
+static int8_t s_last_rssi = 0;          /* 最近一次接收 RSSI */
+static uint16_t s_light_raw = 0;        /* 光照 ADC 缓存 (CH0, PA0) */
+static uint16_t s_soil_raw  = 0;        /* 土壤湿度 ADC 缓存 (CH1, PA1) */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -123,7 +126,7 @@ static void Slave_ConfigCallback(uint8_t dev_id, uint8_t action)
 {
     log_info("Config: dev=0x%02X, act=%d", dev_id, action);
     /* TODO: 确定继电器引脚后取消注释 */
-//    app_relay_set(dev_id, action);
+    app_relay_set(dev_id, action);
 }
 
 /* USER CODE END 0 */
@@ -186,7 +189,10 @@ int main(void)
 
     /* 进入 LoRa 接收模式 */
     e22_demo_receive();
-
+    // Disp_Init();
+    // OLED_ClearBuffer();
+    // OLED_DrawStr(10, 10, "const char ");
+    // OLED_SendBuffer();
     log_info("System Ready!");
     /* USER CODE END 2 */
 
