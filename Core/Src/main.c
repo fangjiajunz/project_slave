@@ -36,6 +36,8 @@
 #include "TinyFrame.h"
 #include "app.h"
 #include "app_adc.h"
+#include "app_co2.h"
+#include "app_display.h"
 #include "app_relay.h"
 #include "bsp.h"
 #include "log.h"
@@ -66,9 +68,9 @@
 /* USER CODE BEGIN PV */
 TinyFrame tf;
 
-static int8_t s_last_rssi = 0;          /* 最近一次接收 RSSI */
-static uint16_t s_light_raw = 0;        /* 光照 ADC 缓存 (CH0, PA0) */
-static uint16_t s_soil_raw  = 0;        /* 土壤湿度 ADC 缓存 (CH1, PA1) */
+static int8_t s_last_rssi = 0;   /* 最近一次接收 RSSI */
+static uint16_t s_light_raw = 0; /* 光照 ADC 缓存 (CH0, PA0) */
+static uint16_t s_soil_raw = 0;  /* 土壤湿度 ADC 缓存 (CH1, PA1) */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,12 +100,12 @@ static void Slave_StatusCallback(TF_StatusData *status)
     status->error_code = 0;
     status->rssi = s_last_rssi;
 
-    /* 传感器数据 (测试值，接入实际传感器后替换) */
-    status->sensor.temperature = 250 + (num % 20);   /* 25.0~26.9 °C */
-    status->sensor.humidity = 550 + (num % 30);      /* 55.0~57.9 % */
-    status->sensor.illuminance = 1000 + num;         /* lux */
-    status->sensor.co2 = 400 + (num % 100);          /* ppm */
-    status->sensor.soil_moisture = 450 + (num % 25); /* 45.0~47.4 % */
+    /* 传感器数据 */
+    status->sensor.temperature = 250 + (num % 20); /* 25.0~26.9 °C (暂用测试值) */
+    status->sensor.humidity = 550 + (num % 30);    /* 55.0~57.9 % (暂用测试值) */
+    status->sensor.illuminance = s_light_raw;      /* 光照 ADC 原始值 0-4095 */
+    status->sensor.co2 = app_co2_get();              /* CO2 ppm (串口传感器) */
+    status->sensor.soil_moisture = s_soil_raw;     /* 土壤湿度 ADC 原始值 0-4095 */
     num++;
 
     /* 控制器状态 */
@@ -169,13 +171,16 @@ int main(void)
     uart_init();                   // 初始化USB串口
     bsp_InitUart();
     /* 等待 USB 枚举完成 */
-    HAL_Delay(5000);
+//    HAL_Delay(5000);
 
     /* 设置日志级别 */
     log_set_level(LOG_DEBUG);
 
     /* 初始化 NVM 并加载配置 */
     app_start();
+
+    /* 初始化 ADC (校准) */
+    app_adc_init();
 
     /* 初始化 LoRa 模组 */
     e22_demo_init();
@@ -189,10 +194,10 @@ int main(void)
 
     /* 进入 LoRa 接收模式 */
     e22_demo_receive();
-    // Disp_Init();
-    // OLED_ClearBuffer();
-    // OLED_DrawStr(10, 10, "const char ");
-    // OLED_SendBuffer();
+
+    /* 初始化 OLED 显示 */
+    app_display_init();
+
     log_info("System Ready!");
     /* USER CODE END 2 */
 
@@ -211,9 +216,12 @@ int main(void)
             }
         }
 
-        /* 1. USB 轮询 (暂时注释，排查卡死问题) */
+        /* 1. USB 轮询 */
         uart_tx_poll();
         uart_rx_poll();
+
+        /* 1.5 CO2 传感器串口数据解析 (每轮主循环都调用) */
+        app_co2_poll();
 
         /* 2. LoRa 接收处理 */
         uint8_t rx_buf[255];
@@ -224,6 +232,29 @@ int main(void)
             s_last_rssi = rssi;
             log_debug("RX %d bytes, RSSI=%d", rx_len, rssi);
             TF_Accept(&tf, rx_buf, rx_len);
+        }
+
+        /* 3. 定时读取 ADC 传感器 (每 500ms，4 次采样取平均) + 刷新 OLED */
+        {
+            static uint32_t last_adc_tick = 0;
+            uint32_t now = HAL_GetTick();
+            if (now - last_adc_tick >= 500)
+            {
+                last_adc_tick = now;
+#define ADC_AVG_COUNT 4
+                uint32_t sum_light = 0;
+                uint32_t sum_soil = 0;
+                for (uint8_t i = 0; i < ADC_AVG_COUNT; i++)
+                {
+                    sum_light += app_adc_get_raw(APP_ADC_CH0);
+                    sum_soil += app_adc_get_raw(APP_ADC_CH1);
+                }
+                s_light_raw = (uint16_t)(sum_light / ADC_AVG_COUNT);
+                s_soil_raw = (uint16_t)(sum_soil / ADC_AVG_COUNT);
+
+                /* 刷新 OLED 显示 (temp/humi 暂用测试值) */
+                app_display_sensor(250, 550, s_light_raw, s_soil_raw, app_co2_get());
+            }
         }
 
         /* USER CODE END WHILE */

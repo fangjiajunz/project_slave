@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>3</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -1369,6 +1369,26 @@
               <FileName>app_relay.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\app\app_relay.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\app_display.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_display.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\app_display.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_co2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\app_co2.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_co2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\app_co2.h</FilePath>
             </File>
           </Files>
         </Group>
