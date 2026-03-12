@@ -2,11 +2,51 @@
 
 #include <string.h>
 
+#include "app_dht11.h"
 #include "app_relay.h"
 #include "application.h"
+#include "main.h"
 #include "nvm.h"
 #define LOG_TAG "APP"
 #include "log.h"
+
+/* ========================== DWT 微秒延时 ========================== */
+
+static volatile uint8_t s_dwt_available = 0;
+
+void app_dwt_init(void)
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+
+    /* verify DWT CYCCNT is actually counting */
+    volatile uint32_t start = DWT->CYCCNT;
+    __NOP();
+    __NOP();
+    __NOP();
+    s_dwt_available = (DWT->CYCCNT != start) ? 1U : 0U;
+}
+
+void app_delay_us(uint32_t us)
+{
+    if (s_dwt_available)
+    {
+        uint32_t start = DWT->CYCCNT;
+        uint32_t ticks = us * (SystemCoreClock / 1000000U);
+        while ((DWT->CYCCNT - start) < ticks)
+        {
+        }
+    }
+    else
+    {
+        volatile uint32_t count = us * 18U;
+        while (count-- != 0U)
+        {
+            __NOP();
+        }
+    }
+}
 
 /* ---- 全局配置，赋默认值 ---- */
 sys_config_t g_sys_config = {
@@ -67,9 +107,13 @@ static void nvm_sys_init(void)
 
 void app_start(void)
 {
+    app_dwt_init();
     nvm_sys_init();
     sync_to_user_config();
     app_relay_init();
+    app_dht11_init();
+    app_display_init();
+    app_adc_init();
 }
 
 void app_config_save(void)

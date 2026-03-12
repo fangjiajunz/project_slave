@@ -37,6 +37,7 @@
 #include "app.h"
 #include "app_adc.h"
 #include "app_co2.h"
+#include "app_dht11.h"
 #include "app_display.h"
 #include "app_relay.h"
 #include "bsp.h"
@@ -67,6 +68,8 @@
 
 /* USER CODE BEGIN PV */
 TinyFrame tf;
+static int16_t s_temp_x10 = 250;
+static uint16_t s_humi_x10 = 550;
 
 static int8_t s_last_rssi = 0;   /* 最近一次接收 RSSI */
 static uint16_t s_light_raw = 0; /* 光照 ADC 缓存 (CH0, PA0) */
@@ -91,22 +94,20 @@ void serial_on_data_received(uint8_t *buffer, uint16_t len)
 /* ========================== 从机回调函数 ========================== */
 
 /**
- * @brief  从机状态查询回调 — 主机轮询时调用，填充当前状态
+ * @brief  从机状态查询回调 - 主机轮询时调用，填充当前状态
  */
 static void Slave_StatusCallback(TF_StatusData *status)
 {
-    static uint16_t num = 0;
     status->node_addr = TF_SLAVE_ADDRESS;
     status->error_code = 0;
     status->rssi = s_last_rssi;
 
     /* 传感器数据 */
-    status->sensor.temperature = 250 + (num % 20); /* 25.0~26.9 °C (暂用测试值) */
-    status->sensor.humidity = 550 + (num % 30);    /* 55.0~57.9 % (暂用测试值) */
-    status->sensor.illuminance = s_light_raw;      /* 光照 ADC 原始值 0-4095 */
-    status->sensor.co2 = app_co2_get();              /* CO2 ppm (串口传感器) */
-    status->sensor.soil_moisture = s_soil_raw;     /* 土壤湿度 ADC 原始值 0-4095 */
-    num++;
+    status->sensor.temperature = s_temp_x10;
+    status->sensor.humidity = s_humi_x10;
+    status->sensor.illuminance = s_light_raw; /* 光照 ADC 原始值 0-4095 */
+    status->sensor.co2 = app_co2_get();
+    status->sensor.soil_moisture = s_soil_raw; /* 土壤湿度 ADC 原始值 0-4095 */
 
     /* 控制器状态 */
     status->ctrl.fan = 0;
@@ -116,7 +117,7 @@ static void Slave_StatusCallback(TF_StatusData *status)
 }
 
 /**
- * @brief  从机 CONFIG 控制回调 — 主机发送设备控制命令时调用
+ * @brief  从机 CONFIG 控制回调 - 主机发送设备控制命令时调用
  *
  * payload 格式: [设备ID, 动作值]
  * 当前为测试阶段，仅输出日志，后续替换为实际 GPIO 控制。
@@ -171,7 +172,7 @@ int main(void)
     uart_init();                   // 初始化USB串口
     bsp_InitUart();
     /* 等待 USB 枚举完成 */
-//    HAL_Delay(5000);
+    HAL_Delay(2000);
 
     /* 设置日志级别 */
     log_set_level(LOG_DEBUG);
@@ -180,7 +181,6 @@ int main(void)
     app_start();
 
     /* 初始化 ADC (校准) */
-    app_adc_init();
 
     /* 初始化 LoRa 模组 */
     e22_demo_init();
@@ -196,7 +196,6 @@ int main(void)
     e22_demo_receive();
 
     /* 初始化 OLED 显示 */
-    app_display_init();
 
     log_info("System Ready!");
     /* USER CODE END 2 */
@@ -205,7 +204,7 @@ int main(void)
     /* USER CODE BEGIN WHILE */
     while (1)
     {
-        /* 0. TF_Tick 超时驱动 — 在主循环中调用，避免中断上下文阻塞 */
+        /* 0. TF_Tick 超时驱动 - 在主循环中调用，避免中断上下文阻塞 */
         {
             static uint32_t last_tick = 0;
             uint32_t now = HAL_GetTick();
@@ -222,6 +221,7 @@ int main(void)
 
         /* 1.5 CO2 传感器串口数据解析 (每轮主循环都调用) */
         app_co2_poll();
+        app_dht11_poll();
 
         /* 2. LoRa 接收处理 */
         uint8_t rx_buf[255];
@@ -253,7 +253,10 @@ int main(void)
                 s_soil_raw = (uint16_t)(sum_soil / ADC_AVG_COUNT);
 
                 /* 刷新 OLED 显示 (temp/humi 暂用测试值) */
-                app_display_sensor(250, 550, s_light_raw, s_soil_raw, app_co2_get());
+                (void)app_dht11_get(&s_temp_x10, &s_humi_x10);
+
+                /* 刷新 OLED 显示 */
+                app_display_sensor(s_temp_x10, s_humi_x10, s_light_raw, s_soil_raw, app_co2_get());
             }
         }
 
@@ -331,7 +334,7 @@ void Error_Handler(void)
 #ifdef USE_FULL_ASSERT
 /**
  * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
+ * where the assert_param error has occurred.
  * @param  file: pointer to the source file name
  * @param  line: assert_param error line source number
  * @retval None

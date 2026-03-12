@@ -1,6 +1,7 @@
 #ifndef APP_H
 #define APP_H
 
+#include <stdint.h>
 #include "config.h"
 
 /* 全局系统配置 */
@@ -11,5 +12,9 @@ void app_start(void);
 
 /* 将当前配置保存到 Flash (先从 user_config 同步再写入) */
 void app_config_save(void);
+
+/* DWT 微秒延时 (Cortex-M3/M4 通用) */
+void app_dwt_init(void);
+void app_delay_us(uint32_t us);
 
 #endif
