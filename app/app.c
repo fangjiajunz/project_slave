@@ -4,6 +4,7 @@
 
 #include "app_dht11.h"
 #include "app_relay.h"
+#include "app_threshold.h"
 #include "application.h"
 #include "main.h"
 #include "nvm.h"
@@ -48,33 +49,32 @@ void app_delay_us(uint32_t us)
     }
 }
 
-/* ---- 全局配置，赋默认值 ---- */
+/* ---- 全局配置，赋默认值 (从机只用 [0]) ---- */
 sys_config_t g_sys_config = {
-    .lora = {
-        .slave_addr = LORA_DEFAULT_SLAVE_ADDR,
-        .frequency_mhz = LORA_DEFAULT_FREQUENCY_MHZ,
-        .tx_power = LORA_DEFAULT_TX_POWER,
-        .lora_sf = LORA_DEFAULT_SF,
-        .lora_bw = LORA_DEFAULT_BW,
+    .threshold = {
+        [0] = {
+            .temp_high = 350,     /* 35.0°C */
+            .temp_low  = 100,     /* 10.0°C */
+            .humi_high = 800,     /* 80.0% */
+            .humi_low  = 300,     /* 30.0% */
+            .soil_dry  = 3000,
+            .light_low = 500,
+            .co2_high  = 1000,
+            .enable    = 0x1F,    /* 全部使能 */
+        },
     },
 };
 
 /* ---- g_sys_config.lora → user_config ---- */
 static void sync_to_user_config(void)
 {
-    user_config.lora_sf = g_sys_config.lora.lora_sf;
-    user_config.lora_bw = g_sys_config.lora.lora_bw;
-    user_config.frequency_mhz = g_sys_config.lora.frequency_mhz;
-    user_config.tx_power = g_sys_config.lora.tx_power;
+
 }
 
 /* ---- user_config → g_sys_config.lora ---- */
 static void sync_from_user_config(void)
 {
-    g_sys_config.lora.lora_sf = user_config.lora_sf;
-    g_sys_config.lora.lora_bw = user_config.lora_bw;
-    g_sys_config.lora.frequency_mhz = user_config.frequency_mhz;
-    g_sys_config.lora.tx_power = user_config.tx_power;
+
 }
 
 /* ---- NVM 初始化并加载 ---- */
@@ -89,12 +89,7 @@ static void nvm_sys_init(void)
                            sizeof(g_sys_config));
     if (ret == NVM_ERR_NO)
     {
-        log_info("NVM: config loaded (addr=%d, freq=%d, pwr=%d, sf=%d, bw=%d)",
-                 g_sys_config.lora.slave_addr,
-                 g_sys_config.lora.frequency_mhz,
-                 g_sys_config.lora.tx_power,
-                 g_sys_config.lora.lora_sf,
-                 g_sys_config.lora.lora_bw);
+
     }
     else
     {
@@ -114,6 +109,7 @@ void app_start(void)
     app_dht11_init();
     app_display_init();
     app_adc_init();
+    app_threshold_init();
 }
 
 void app_config_save(void)

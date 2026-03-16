@@ -1420,6 +1420,26 @@
               <FileType>5</FileType>
               <FilePath>..\app\dht11\driver_dht11_interface.h</FilePath>
             </File>
+            <File>
+              <FileName>app_threshold.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\app_threshold.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_threshold.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\app_threshold.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_threshold_ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\app_threshold_ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_threshold_ui.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\app_threshold_ui.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

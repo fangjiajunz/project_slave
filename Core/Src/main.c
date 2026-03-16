@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+﻿/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
  * @file           : main.c
@@ -35,11 +35,14 @@
 #define LOG_TAG "App"
 #include "TinyFrame.h"
 #include "app.h"
+#include "app.h"
 #include "app_adc.h"
 #include "app_co2.h"
 #include "app_dht11.h"
 #include "app_display.h"
 #include "app_relay.h"
+#include "app_threshold.h"
+#include "app_threshold_ui.h"
 #include "bsp.h"
 #include "log.h"
 #include "tf_multinode.h"
@@ -73,7 +76,7 @@ static uint16_t s_humi_x10 = 550;
 
 static int8_t s_last_rssi = 0;   /* 最近一次接收 RSSI */
 static uint16_t s_light_raw = 0; /* 光照 ADC 缓存 (CH0, PA0) */
-static uint16_t s_soil_raw = 0;  /* 土壤湿度 ADC 缓存 (CH1, PA1) */
+static uint16_t s_soil_ph = 0;  /* 土壤 PH ADC 缓存 (CH1, PA1) */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,13 +110,13 @@ static void Slave_StatusCallback(TF_StatusData *status)
     status->sensor.humidity = s_humi_x10;
     status->sensor.illuminance = s_light_raw; /* 光照 ADC 原始值 0-4095 */
     status->sensor.co2 = app_co2_get();
-    status->sensor.soil_moisture = s_soil_raw; /* 土壤湿度 ADC 原始值 0-4095 */
+    status->sensor.soil_ph = s_soil_ph; /* 土壤 PH ADC 原始值 0-4095 */
 
-    /* 控制器状态 */
-    status->ctrl.fan = 0;
-    status->ctrl.heater = 0;
-    status->ctrl.pump = 0;
-    status->ctrl.led = 0;
+    /* 控制器状态: read actual GPIO state */
+    status->ctrl.fan    = app_relay_get(TF_CTRL_DEV_FAN);
+    status->ctrl.heater = app_relay_get(TF_CTRL_DEV_HEATER);
+    status->ctrl.pump   = app_relay_get(TF_CTRL_DEV_PUMP);
+    status->ctrl.led    = app_relay_get(TF_CTRL_DEV_LED);
 }
 
 /**
@@ -128,8 +131,20 @@ static void Slave_StatusCallback(TF_StatusData *status)
 static void Slave_ConfigCallback(uint8_t dev_id, uint8_t action)
 {
     log_info("Config: dev=0x%02X, act=%d", dev_id, action);
-    /* TODO: 确定继电器引脚后取消注释 */
     app_relay_set(dev_id, action);
+    app_threshold_manual_override(dev_id);
+}
+
+/**
+ * @brief  Threshold config callback — master distributes new thresholds via LoRa
+ */
+static void Slave_ThresholdCallback(const threshold_config_t *cfg)
+{
+    log_info("Threshold from master: high=%d low=%d humi=%u/%u ph=%u light=%u co2=%u en=0x%02X",
+             cfg->temp_high, cfg->temp_low, cfg->humi_high, cfg->humi_low,
+             cfg->soil_dry, cfg->light_low, cfg->co2_high, cfg->enable);
+    g_sys_config.threshold[0] = *cfg;
+    app_config_save();
 }
 
 /* USER CODE END 0 */
@@ -179,6 +194,7 @@ int main(void)
 
     /* 初始化 NVM 并加载配置 */
     app_start();
+    app_threshold_ui_init();
 
     /* 初始化 ADC (校准) */
 
@@ -190,6 +206,7 @@ int main(void)
     TF_Slave_Init(&tf, TF_SLAVE_ADDRESS);
     TF_Slave_SetStatusCallback(Slave_StatusCallback);
     TF_Slave_SetConfigCallback(Slave_ConfigCallback);
+    TF_Slave_SetThresholdCallback(Slave_ThresholdCallback);
     log_info("Press ENTER to send key event to Master");
 
     /* 进入 LoRa 接收模式 */
@@ -234,7 +251,10 @@ int main(void)
             TF_Accept(&tf, rx_buf, rx_len);
         }
 
-        /* 3. 定时读取 ADC 传感器 (每 500ms，4 次采样取平均) + 刷新 OLED */
+        /* 3. 阈值编辑 UI 轮询 (按键 + OLED) */
+        app_threshold_ui_poll();
+
+        /* 4. 定时读取 ADC 传感器 (每 500ms，4 次采样取平均) + 刷新 OLED */
         {
             static uint32_t last_adc_tick = 0;
             uint32_t now = HAL_GetTick();
@@ -250,13 +270,19 @@ int main(void)
                     sum_soil += app_adc_get_raw(APP_ADC_CH1);
                 }
                 s_light_raw = (uint16_t)(sum_light / ADC_AVG_COUNT);
-                s_soil_raw = (uint16_t)(sum_soil / ADC_AVG_COUNT);
+                s_soil_ph = (uint16_t)(sum_soil / ADC_AVG_COUNT);
 
                 /* 刷新 OLED 显示 (temp/humi 暂用测试值) */
                 (void)app_dht11_get(&s_temp_x10, &s_humi_x10);
 
-                /* 刷新 OLED 显示 */
-                app_display_sensor(s_temp_x10, s_humi_x10, s_light_raw, s_soil_raw, app_co2_get());
+                /* 刷新 OLED 显示 (编辑模式时由 threshold_ui 控制) */
+                if (!app_threshold_ui_is_active())
+                {
+                    app_display_sensor(s_temp_x10, s_humi_x10, s_light_raw, s_soil_ph, app_co2_get());
+                }
+
+                /* 阈值自动控制检测 */
+                app_threshold_check(s_temp_x10, s_humi_x10, s_light_raw, s_soil_ph, app_co2_get());
             }
         }
 

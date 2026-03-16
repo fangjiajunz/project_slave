@@ -76,6 +76,10 @@ void app_relay_set(uint8_t dev_id, uint8_t action)
         return;
     }
 
+    /* 状态未变化则跳过，避免重复日志 */
+    if (app_relay_get(dev_id) == (action ? 1 : 0))
+        return;
+
     HAL_GPIO_WritePin(s_relays[dev_id].port, s_relays[dev_id].pin,
                       action_to_level(action));
     log_info("Relay 0x%02X -> %s", dev_id, action ? "ON" : "OFF");

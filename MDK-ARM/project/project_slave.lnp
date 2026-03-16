@@ -107,6 +107,8 @@
 "project\app_dht11.o"
 "project\driver_dht11.o"
 "project\driver_dht11_interface.o"
+"project\app_threshold.o"
+"project\app_threshold_ui.o"
 --library_type=microlib --strict --scatter "project\project_slave.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

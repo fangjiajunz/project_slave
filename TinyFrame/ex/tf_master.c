@@ -456,3 +456,8 @@ void TF_Master_PollTick(TinyFrame *tf)
             break;
     }
 }
+
+bool TF_Master_IsPollIdle(void)
+{
+    return (!s_poll.enabled) || (s_poll.state == POLL_IDLE);
+}

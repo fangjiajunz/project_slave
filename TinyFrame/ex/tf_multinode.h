@@ -43,8 +43,8 @@ typedef enum
     TF_MSG_STATUS_RSP = 0x05, /* 状态响应 */
     TF_MSG_DATA = 0x06,       /* 数据传输 */
     TF_MSG_CONFIG = 0x07,     /* 配置命令 */
-    /* 0x08 - 0x0F 预留给用户自定义 */
-    TF_MSG_USER_BASE = 0x08, /* 用户自定义消息起始 */
+    /* 0x08 - 0x0F 用户自定义 */
+    TF_MSG_THRESHOLD = 0x08, /* threshold config distribution */
     TF_MSG_MAX = 0x0F        /* 最大消息类型 */
 } TF_MsgType;
 
@@ -127,7 +127,7 @@ typedef struct
     uint16_t humidity;       /* 湿度 (x10, 如 655 = 65.5%) */
     uint16_t illuminance;    /* 光照强度 (lux) */
     uint16_t co2;            /* CO2浓度 (ppm) */
-    uint16_t soil_moisture;  /* 土壤湿度 (x10, 如 455 = 45.5%) */
+    uint16_t soil_ph;        /* 土壤PH (x10, 如 65 = 6.5) */
 } sensor_cb;
 
 /* 控制器状态 */

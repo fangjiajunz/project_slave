@@ -22,6 +22,7 @@
 
 #include "tf_multinode.h"
 #include "TinyFrame.h"
+#include "config.h"
 
 /* ========================== 配置 ========================== */
 
@@ -62,6 +63,12 @@ typedef void (*TF_Slave_StatusCallback)(TF_StatusData *status);
  */
 typedef void (*TF_Slave_ConfigCallback)(uint8_t dev_id, uint8_t action);
 
+/**
+ * @brief  threshold config callback type
+ * @param  cfg: pointer to threshold config received from master
+ */
+typedef void (*TF_Slave_ThresholdCallback)(const threshold_config_t *cfg);
+
 /* ========================== API 函数 ========================== */
 
 /**
@@ -98,6 +105,12 @@ void TF_Slave_SetStatusCallback(TF_Slave_StatusCallback callback);
  * @param  callback: 回调函数，收到 TF_MSG_CONFIG 时调用
  */
 void TF_Slave_SetConfigCallback(TF_Slave_ConfigCallback callback);
+
+/**
+ * @brief  Set threshold config callback
+ * @param  callback: called when TF_MSG_THRESHOLD is received from master
+ */
+void TF_Slave_SetThresholdCallback(TF_Slave_ThresholdCallback callback);
 
 /**
  * @brief  发送 ACK 响应

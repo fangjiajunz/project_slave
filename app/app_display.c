@@ -6,13 +6,13 @@
 /*
  * 布局: 上 3 列 + 下 2 列
  *
- * ┌──────────┬──────────┬──────────┐
- * │ Temp     │ Humi     │ Light    │  上半区 0~31
- * │ 25.0C    │ 55.0%    │ 3200     │
- * ├──────────┴────┬─────┴──────────┤
- * │ Soil          │ CO2            │  下半区 32~63
- * │ 2048          │ 400ppm         │
- * └───────────────┴────────────────┘
+ * +----------+----------+----------+
+ * | Temp     | Humi     | Light    |  上半区 0~31
+ * | 25.0C    | 55.0%    | 3200     |
+ * +----------+-----+----+----------+
+ * | PH            | CO2            |  下半区 32~63
+ * | 2048          | 400ppm         |
+ * +---------------+----------------+
  */
 
 /* ---- 上半区: 3 列, 每列 ~42px ---- */
@@ -23,7 +23,7 @@
 #define TOP_VALUE_Y 26      /* 数值 baseline */
 
 /* ---- 下半区: 2 列, 每列 64px ---- */
-#define BOT_COL1    2       /* Soil x 起点 */
+#define BOT_COL1    2       /* PH x 起点 */
 #define BOT_COL2    66      /* CO2  x 起点 */
 #define BOT_LABEL_Y 44      /* 标签 baseline */
 #define BOT_VALUE_Y 58      /* 数值 baseline */
@@ -68,8 +68,8 @@ void app_display_sensor(int16_t temp, uint16_t humi,
     sprintf(buf, "%u", light);
     OLED_DrawStr(TOP_COL3, TOP_VALUE_Y, buf);
 
-    /* ---- 下左: 土壤湿度 ---- */
-    OLED_DrawStr(BOT_COL1, BOT_LABEL_Y, "Soil");
+    /* ---- 下左: 土壤PH ---- */
+    OLED_DrawStr(BOT_COL1, BOT_LABEL_Y, "PH");
     sprintf(buf, "%u", soil);
     OLED_DrawStr(BOT_COL1, BOT_VALUE_Y, buf);
 

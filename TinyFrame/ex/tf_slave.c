@@ -15,6 +15,7 @@ static uint8_t s_slave_addr = 0;                    /* 本机地址 */
 static TF_Slave_LedCallback s_led_callback = NULL;  /* LED 回调 */
 static TF_Slave_StatusCallback s_status_callback = NULL;  /* 状态回调 */
 static TF_Slave_ConfigCallback s_config_callback = NULL;  /* CONFIG 控制回调 */
+static TF_Slave_ThresholdCallback s_threshold_callback = NULL; /* threshold config callback */
 
 /**
  * 从机上报重试上下文 — 保存当前待确认的上报消息参数。
@@ -144,6 +145,16 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             }
             break;
 
+        case TF_MSG_THRESHOLD:
+            log_info("Threshold config received, len=%d", msg->len);
+            if (msg->len >= sizeof(threshold_config_t) && s_threshold_callback != NULL) {
+                s_threshold_callback((const threshold_config_t *)msg->data);
+            }
+            if (!is_broadcast) {
+                TF_Slave_SendAck(tf, msg);
+            }
+            break;
+
         default:
             log_warn("Unknown message type: 0x%02X", msg_type);
             if (!is_broadcast) {
@@ -205,6 +216,11 @@ void TF_Slave_SetStatusCallback(TF_Slave_StatusCallback callback)
 void TF_Slave_SetConfigCallback(TF_Slave_ConfigCallback callback)
 {
     s_config_callback = callback;
+}
+
+void TF_Slave_SetThresholdCallback(TF_Slave_ThresholdCallback callback)
+{
+    s_threshold_callback = callback;
 }
 
 bool TF_Slave_SendAck(TinyFrame *tf, TF_Msg *msg)

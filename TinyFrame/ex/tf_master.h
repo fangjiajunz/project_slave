@@ -183,4 +183,10 @@ void TF_Master_SetPollCallback(TF_Master_PollCallback callback);
  */
 void TF_Master_PollTick(TinyFrame *tf);
 
+/**
+ * @brief  查询轮询状态机是否空闲
+ * @return true = IDLE 状态，可以安全发送其他命令
+ */
+bool TF_Master_IsPollIdle(void);
+
 #endif /* TF_MASTER_H */
