@@ -108,8 +108,8 @@ void app_threshold_ui_poll(void)
 {
     if (!s_active)
     {
-        /* 非编辑模式: ENTER 进入编辑 */
-        if (key_check_press(KEY_NAME_ENTER))
+        /* 非编辑模式: ENTER 长按进入编辑 */
+        if (key_check_long_press(KEY_NAME_ENTER))
         {
             s_active = true;
             s_index  = 0;

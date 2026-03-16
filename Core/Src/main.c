@@ -38,6 +38,7 @@
 #include "app.h"
 #include "app_adc.h"
 #include "app_co2.h"
+#include "app_devctrl_ui.h"
 #include "app_dht11.h"
 #include "app_display.h"
 #include "app_relay.h"
@@ -195,6 +196,7 @@ int main(void)
     /* 初始化 NVM 并加载配置 */
     app_start();
     app_threshold_ui_init();
+    app_devctrl_ui_init();
 
     /* 初始化 ADC (校准) */
 
@@ -254,6 +256,9 @@ int main(void)
         /* 3. 阈值编辑 UI 轮询 (按键 + OLED) */
         app_threshold_ui_poll();
 
+        /* 3.5 设备控制 UI 轮询 (按键选择设备 + toggle) */
+        app_devctrl_ui_poll();
+
         /* 4. 定时读取 ADC 传感器 (每 500ms，4 次采样取平均) + 刷新 OLED */
         {
             static uint32_t last_adc_tick = 0;
@@ -278,7 +283,8 @@ int main(void)
                 /* 刷新 OLED 显示 (编辑模式时由 threshold_ui 控制) */
                 if (!app_threshold_ui_is_active())
                 {
-                    app_display_sensor(s_temp_x10, s_humi_x10, s_light_raw, s_soil_ph, app_co2_get());
+                    app_display_sensor(s_temp_x10, s_humi_x10, s_light_raw, s_soil_ph, app_co2_get(),
+                                       app_devctrl_ui_status_str());
                 }
 
                 /* 阈值自动控制检测 */

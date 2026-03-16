@@ -117,6 +117,8 @@ void Error_Handler(void);
     void buzzer_button_push(void);
 
     bool key_check_press(key_name_t name);
+    bool key_check_long_press(key_name_t name);
+    uint32_t key_get_hold_time(key_name_t name);
     void key_set_continue(key_name_t name, bool enable);
     void key_timer_1ms_interrupt_callback(void);
 

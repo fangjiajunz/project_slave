@@ -1440,6 +1440,16 @@
               <FileType>5</FileType>
               <FilePath>..\app\app_threshold_ui.h</FilePath>
             </File>
+            <File>
+              <FileName>app_devctrl_ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\app_devctrl_ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_devctrl_ui.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app\app_devctrl_ui.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
