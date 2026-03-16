@@ -115,6 +115,7 @@ static inline void key_release( key_name_t name )
 	}
 	key_group[ name ].count = 0;
 	key_group[ name ].is_continue = false;
+	key_group[ name ].is_long_press = false;
 }
 
 
