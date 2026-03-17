@@ -11,7 +11,7 @@
  * ================================================================== */
 
 #define RELAY_FAN_PORT GPIOB
-#define RELAY_FAN_PIN GPIO_PIN_2
+#define RELAY_FAN_PIN GPIO_PIN_15
 
 #define RELAY_HEATER_PORT GPIOA
 #define RELAY_HEATER_PIN GPIO_PIN_2
