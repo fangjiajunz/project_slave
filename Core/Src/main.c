@@ -77,7 +77,7 @@ static uint16_t s_humi_x10 = 550;
 
 static int8_t s_last_rssi = 0;   /* 最近一次接收 RSSI */
 static uint16_t s_light_raw = 0; /* 光照 ADC 缓存 (CH0, PA0) */
-static uint16_t s_soil_ph = 0;  /* 土壤 PH ADC 缓存 (CH1, PA1) */
+static uint16_t s_soil_moisture = 0;  /* 土壤湿度 ADC 缓存 (CH1, PA1) */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -111,7 +111,7 @@ static void Slave_StatusCallback(TF_StatusData *status)
     status->sensor.humidity = s_humi_x10;
     status->sensor.illuminance = s_light_raw; /* 光照 ADC 原始值 0-4095 */
     status->sensor.co2 = app_co2_get();
-    status->sensor.soil_ph = s_soil_ph; /* 土壤 PH ADC 原始值 0-4095 */
+    status->sensor.soil_moisture = s_soil_moisture; /* 土壤湿度 x10 (0-1000 对应 0-100%) */
 
     /* 控制器状态: read actual GPIO state */
     status->ctrl.fan    = app_relay_get(TF_CTRL_DEV_FAN);
@@ -137,15 +137,32 @@ static void Slave_ConfigCallback(uint8_t dev_id, uint8_t action)
 }
 
 /**
- * @brief  Threshold config callback — master distributes new thresholds via LoRa
+ * @brief  Threshold field update callback — master sends per-field updates via LoRa
  */
-static void Slave_ThresholdCallback(const threshold_config_t *cfg)
+static void Slave_ThresholdCallback(uint8_t field_id, int16_t value)
 {
-    log_info("Threshold from master: high=%d low=%d humi=%u/%u ph=%u light=%u co2=%u en=0x%02X",
-             cfg->temp_high, cfg->temp_low, cfg->humi_high, cfg->humi_low,
-             cfg->soil_dry, cfg->light_low, cfg->co2_high, cfg->enable);
-    g_sys_config.threshold[0] = *cfg;
-    app_config_save();
+    threshold_config_t *th = &g_sys_config.threshold[0];
+
+    switch (field_id) {
+    case TF_THRESH_FIELD_TEMP_HIGH: th->temp_high = value;          break;
+    case TF_THRESH_FIELD_TEMP_LOW:  th->temp_low  = value;          break;
+    case TF_THRESH_FIELD_HUMI_HIGH: th->humi_high = (uint16_t)value; break;
+    case TF_THRESH_FIELD_HUMI_LOW:  th->humi_low  = (uint16_t)value; break;
+    case TF_THRESH_FIELD_SOIL_DRY:  th->soil_dry  = (uint16_t)value; break;
+    case TF_THRESH_FIELD_LIGHT_LOW: th->light_low = (uint16_t)value; break;
+    case TF_THRESH_FIELD_CO2_HIGH:  th->co2_high  = (uint16_t)value; break;
+    case TF_THRESH_FIELD_ENABLE:    th->enable    = (uint8_t)value;  break;
+    case 0xFF:
+        /* 批量更新完成，统一保存到 NVM */
+        log_info("Threshold batch done, saving");
+        app_config_save();
+        return;
+    default:
+        log_warn("Unknown threshold field: %d", field_id);
+        return;
+    }
+
+    log_info("Threshold field %d = %d", field_id, value);
 }
 
 /* USER CODE END 0 */
@@ -275,7 +292,7 @@ int main(void)
                     sum_soil += app_adc_get_raw(APP_ADC_CH1);
                 }
                 s_light_raw = (uint16_t)(sum_light / ADC_AVG_COUNT);
-                s_soil_ph = (uint16_t)(sum_soil / ADC_AVG_COUNT);
+                s_soil_moisture = (uint16_t)(sum_soil / ADC_AVG_COUNT);
 
                 /* 刷新 OLED 显示 (temp/humi 暂用测试值) */
                 (void)app_dht11_get(&s_temp_x10, &s_humi_x10);
@@ -283,12 +300,12 @@ int main(void)
                 /* 刷新 OLED 显示 (编辑模式时由 threshold_ui 控制) */
                 if (!app_threshold_ui_is_active())
                 {
-                    app_display_sensor(s_temp_x10, s_humi_x10, s_light_raw, s_soil_ph, app_co2_get(),
+                    app_display_sensor(s_temp_x10, s_humi_x10, s_light_raw, s_soil_moisture, app_co2_get(),
                                        app_devctrl_ui_status_str());
                 }
 
                 /* 阈值自动控制检测 */
-                app_threshold_check(s_temp_x10, s_humi_x10, s_light_raw, s_soil_ph, app_co2_get());
+                app_threshold_check(s_temp_x10, s_humi_x10, s_light_raw, s_soil_moisture, app_co2_get());
             }
         }
 

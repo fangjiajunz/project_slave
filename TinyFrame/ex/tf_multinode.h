@@ -118,6 +118,22 @@ typedef enum
 #define TF_CTRL_ACT_OFF     0x00    /* 关闭 */
 #define TF_CTRL_ACT_ON      0x01    /* 开启 */
 
+/* ========================== 阈值字段 ID (按字段下发) ========================== */
+
+/*
+ * TF_MSG_THRESHOLD payload 格式 (3 字节):
+ *   payload[0] = field_id (TF_THRESH_FIELD_xxx)
+ *   payload[1..2] = value (int16_t, little-endian)
+ */
+#define TF_THRESH_FIELD_TEMP_HIGH  0
+#define TF_THRESH_FIELD_TEMP_LOW   1
+#define TF_THRESH_FIELD_HUMI_HIGH  2
+#define TF_THRESH_FIELD_HUMI_LOW   3
+#define TF_THRESH_FIELD_SOIL_DRY   4
+#define TF_THRESH_FIELD_LIGHT_LOW  5
+#define TF_THRESH_FIELD_CO2_HIGH   6
+#define TF_THRESH_FIELD_ENABLE     7
+
 /* ========================== 状态响应结构 ========================== */
 
 /* 传感器数据 */
@@ -127,7 +143,7 @@ typedef struct
     uint16_t humidity;       /* 湿度 (x10, 如 655 = 65.5%) */
     uint16_t illuminance;    /* 光照强度 (lux) */
     uint16_t co2;            /* CO2浓度 (ppm) */
-    uint16_t soil_ph;        /* 土壤PH (x10, 如 65 = 6.5) */
+    uint16_t soil_moisture;  /* 土壤湿度 (x10, 0-1000 对应 0-100%) */
 } sensor_cb;
 
 /* 控制器状态 */

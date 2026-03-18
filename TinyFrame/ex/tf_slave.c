@@ -146,9 +146,16 @@ static TF_Result Slave_AddressFilter(TinyFrame *tf, TF_Msg *msg)
             break;
 
         case TF_MSG_THRESHOLD:
-            log_info("Threshold config received, len=%d", msg->len);
-            if (msg->len >= sizeof(threshold_config_t) && s_threshold_callback != NULL) {
-                s_threshold_callback((const threshold_config_t *)msg->data);
+            log_info("Threshold field update, len=%d", msg->len);
+            if (s_threshold_callback != NULL) {
+                /* 变长 payload: 每 3 字节一组 [field_id, val_lo, val_hi] */
+                for (TF_LEN off = 0; off + 3 <= msg->len; off += 3) {
+                    uint8_t field_id = msg->data[off];
+                    int16_t value = (int16_t)(msg->data[off + 1] | (msg->data[off + 2] << 8));
+                    s_threshold_callback(field_id, value);
+                }
+                /* 通知保存: field_id = 0xFF 表示批量更新完成 */
+                s_threshold_callback(0xFF, 0);
             }
             if (!is_broadcast) {
                 TF_Slave_SendAck(tf, msg);

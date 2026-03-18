@@ -50,6 +50,17 @@ void app_delay_us(uint32_t us)
 }
 
 /* ---- 全局配置，赋默认值 (从机只用 [0]) ---- */
+static const threshold_config_t s_threshold_default = {
+    .temp_high = 350,     /* 35.0°C */
+    .temp_low  = 100,     /* 10.0°C */
+    .humi_high = 800,     /* 80.0% */
+    .humi_low  = 300,     /* 30.0% */
+    .soil_dry  = 3000,
+    .light_low = 500,
+    .co2_high  = 1000,
+    .enable    = 0x1F,    /* 全部使能 */
+};
+
 sys_config_t g_sys_config = {
     .threshold = {
         [0] = {
@@ -89,7 +100,14 @@ static void nvm_sys_init(void)
                            sizeof(g_sys_config));
     if (ret == NVM_ERR_NO)
     {
-
+        /* NVM 读取成功，校验：enable 或阈值为 0 则视为无效，恢复默认 */
+        threshold_config_t *th = &g_sys_config.threshold[0];
+        if (th->enable == 0 || (th->temp_high == 0 && th->soil_dry == 0 && th->light_low == 0))
+        {
+            log_warn("NVM: threshold[0] invalid, reset to default");
+            *th = s_threshold_default;
+            nvm_write(NVM_CONFIG_PARTITION, (uint8_t *)&g_sys_config, sizeof(g_sys_config));
+        }
     }
     else
     {

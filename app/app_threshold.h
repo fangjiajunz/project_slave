@@ -13,7 +13,7 @@ void app_threshold_init(void);
  * @param  temp_x10:  温度 x10 (如 250 = 25.0°C)
  * @param  humi_x10:  湿度 x10 (未使用，预留)
  * @param  light_raw: 光照 ADC 原始值 0-4095
- * @param  soil_raw:  土壤PH ADC 原始值 0-4095
+ * @param  soil_raw:  土壤湿度 x10 (0-1000 对应 0-100%)
  * @param  co2_ppm:   CO2 浓度 ppm
  */
 void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,

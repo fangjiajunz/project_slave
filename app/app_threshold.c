@@ -126,18 +126,18 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
             app_relay_set(TF_CTRL_DEV_HEATER, s_heater_auto);
     }
 
-    /* ---- 土壤PH → 水泵 ---- */
+    /* ---- 土壤湿度 → 水泵 ---- */
     if (cfg->enable & THRESH_EN_SOIL)
     {
         if (!s_pump_auto && soil_raw > cfg->soil_dry)
         {
             s_pump_auto = 1;
-            log_info("PH HIGH: %u > %u -> PUMP ON", soil_raw, cfg->soil_dry);
+            log_info("SOIL DRY: %u > %u -> PUMP ON", soil_raw, cfg->soil_dry);
         }
         else if (s_pump_auto && soil_raw < (cfg->soil_dry - HYST_SOIL))
         {
             s_pump_auto = 0;
-            log_info("PH OK: %u < %u -> PUMP OFF",
+            log_info("SOIL OK: %u < %u -> PUMP OFF",
                      soil_raw, cfg->soil_dry - HYST_SOIL);
         }
 

@@ -64,10 +64,11 @@ typedef void (*TF_Slave_StatusCallback)(TF_StatusData *status);
 typedef void (*TF_Slave_ConfigCallback)(uint8_t dev_id, uint8_t action);
 
 /**
- * @brief  threshold config callback type
- * @param  cfg: pointer to threshold config received from master
+ * @brief  threshold field update callback type
+ * @param  field_id: TF_THRESH_FIELD_xxx
+ * @param  value:    field value (int16_t)
  */
-typedef void (*TF_Slave_ThresholdCallback)(const threshold_config_t *cfg);
+typedef void (*TF_Slave_ThresholdCallback)(uint8_t field_id, int16_t value);
 
 /* ========================== API 函数 ========================== */
 

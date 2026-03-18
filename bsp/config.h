@@ -38,10 +38,10 @@ typedef struct {
     int16_t  temp_low;       /* 温度下限 x10 (默认 100 = 10.0°C) → 开加热器 */
     uint16_t humi_high;      /* 湿度上限 x10 (默认 800 = 80.0%) */
     uint16_t humi_low;       /* 湿度下限 x10 (默认 300 = 30.0%) */
-    uint16_t soil_dry;       /* 土壤PH阈值 ADC (默认 3000) → 开水泵 */
+    uint16_t soil_dry;       /* 土壤湿度阈值 x10 (默认 300 = 30%) → 开水泵 */
     uint16_t light_low;      /* 光照不足阈值 ADC (默认 500) → 开LED */
     uint16_t co2_high;       /* CO2上限 ppm (默认 1000) → 开风扇 */
-    uint8_t  enable;         /* 自动控制使能位掩码 bit0=温度 bit1=土壤PH bit2=光照 bit3=CO2 bit4=湿度 */
+    uint8_t  enable;         /* 自动控制使能位掩码 bit0=温度 bit1=土壤湿度 bit2=光照 bit3=CO2 bit4=湿度 */
 } threshold_config_t;
 
 /* ---- 设备数量 ---- */
