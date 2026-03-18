@@ -53,8 +53,9 @@ void app_relay_init(void)
         {
             /* 1. 先开启该 GPIO 端口的时钟 (极其关键!) */
 
-            /* 2. 写入默认电平（关闭），防止初始化瞬间的继电器抖动 */
-            HAL_GPIO_WritePin(s_relays[i].port, s_relays[i].pin, action_to_level(0));
+            /* 2. 写入默认电平，LED 默认开启，其他关闭 */
+            uint8_t default_state = (i == TF_CTRL_DEV_LED) ? 1 : 0;
+            HAL_GPIO_WritePin(s_relays[i].port, s_relays[i].pin, action_to_level(default_state));
 
             /* 3. 配置 GPIO 为推挽输出 */
             GPIO_InitStruct.Pin = s_relays[i].pin;
