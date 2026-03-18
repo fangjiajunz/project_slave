@@ -94,8 +94,18 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
   {
   /* USER CODE BEGIN TIM2_MspPostInit 0 */
 
+  /* 蜂鸣器改用GPIO直接控制，不使用PWM */
+  GPIO_InitStruct.Pin = BUZZER_PWM_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  /* 普通推挽输出 */
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(BUZZER_PWM_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(BUZZER_PWM_GPIO_Port, BUZZER_PWM_Pin, GPIO_PIN_RESET);  /* 初始关闭 */
+
   /* USER CODE END TIM2_MspPostInit 0 */
 
+  /* 注释掉原PWM配置 */
+  #if 0
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**TIM2 GPIO Configuration
     PB3     ------> TIM2_CH2
@@ -106,6 +116,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
     HAL_GPIO_Init(BUZZER_PWM_GPIO_Port, &GPIO_InitStruct);
 
     __HAL_AFIO_REMAP_TIM2_PARTIAL_1();
+  #endif
 
   /* USER CODE BEGIN TIM2_MspPostInit 1 */
 
@@ -132,17 +143,20 @@ void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* tim_pwmHandle)
 
 /* USER CODE BEGIN 1 */
 
-/* buzzer functions - TIM2 已改为定时中断，蜂鸣器功能暂不可用 */
+/* buzzer functions - 改用GPIO直接控制 */
 void buzzer_on(void)
 {
+    HAL_GPIO_WritePin(BUZZER_PWM_GPIO_Port, BUZZER_PWM_Pin, GPIO_PIN_SET);
 }
 
 void buzzer_off(void)
 {
+    HAL_GPIO_WritePin(BUZZER_PWM_GPIO_Port, BUZZER_PWM_Pin, GPIO_PIN_RESET);
 }
 
 void buzzer_button_push(void)
 {
+    /* 按键时不响 */
 }
 
 /* USER CODE END 1 */

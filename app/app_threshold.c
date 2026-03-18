@@ -54,6 +54,26 @@ static uint8_t s_heater_auto;    /* 自动加热器: 0=关, 1=开 */
 static uint8_t s_pump_auto;      /* 自动水泵: 0=关, 1=开 */
 static uint8_t s_led_auto;       /* 自动LED: 0=关, 1=开 */
 
+/* ========================== 蜂鸣器控制 ========================== */
+
+#define BUZZER_DURATION_MS  1000  /* 蜂鸣器响铃时长 1秒 */
+static uint32_t s_buzzer_off_tick = 0;  /* 蜂鸣器关闭时刻，0表示未激活 */
+
+static void buzzer_trigger(void)
+{
+    buzzer_on();
+    s_buzzer_off_tick = HAL_GetTick() + BUZZER_DURATION_MS;
+}
+
+static void buzzer_update(void)
+{
+    if (s_buzzer_off_tick != 0 && HAL_GetTick() >= s_buzzer_off_tick)
+    {
+        buzzer_off();
+        s_buzzer_off_tick = 0;
+    }
+}
+
 /* ========================== API 实现 ========================== */
 
 void app_threshold_manual_override(uint8_t dev_id)
@@ -95,6 +115,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
             log_info("TEMP HIGH: %d.%d > %d.%d -> FAN ON",
                      temp_x10 / 10, temp_x10 % 10,
                      cfg->temp_high / 10, cfg->temp_high % 10);
+            buzzer_trigger();  /* 温度过高报警 */
         }
         else if (s_fan_by_temp && temp_x10 < (cfg->temp_high - HYST_TEMP))
         {
@@ -112,6 +133,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
             log_info("TEMP LOW: %d.%d < %d.%d -> HEATER ON",
                      temp_x10 / 10, temp_x10 % 10,
                      cfg->temp_low / 10, cfg->temp_low % 10);
+            buzzer_trigger();  /* 温度过低报警 */
         }
         else if (s_heater_auto && temp_x10 > (cfg->temp_low + HYST_TEMP))
         {
@@ -133,6 +155,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
         {
             s_pump_auto = 1;
             log_info("SOIL DRY: %u > %u -> PUMP ON", soil_raw, cfg->soil_dry);
+            buzzer_trigger();  /* 土壤干燥报警 */
         }
         else if (s_pump_auto && soil_raw < (cfg->soil_dry - HYST_SOIL))
         {
@@ -152,6 +175,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
         {
             s_led_auto = 1;
             log_info("LIGHT LOW: %u < %u -> LED ON", light_raw, cfg->light_low);
+            buzzer_trigger();  /* 光照不足报警 */
         }
         else if (s_led_auto && light_raw > (cfg->light_low + HYST_LIGHT))
         {
@@ -171,6 +195,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
         {
             s_fan_by_co2 = 1;
             log_info("CO2 HIGH: %u > %u -> FAN ON", co2_ppm, cfg->co2_high);
+            buzzer_trigger();  /* CO2过高报警 */
         }
         else if (s_fan_by_co2 && co2_ppm < (cfg->co2_high - HYST_CO2))
         {
@@ -186,4 +211,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
         if (!is_manual_active(TF_CTRL_DEV_FAN))
             app_relay_set(TF_CTRL_DEV_FAN, (s_fan_by_temp || s_fan_by_co2) ? 1 : 0);
     }
+
+    /* 更新蜂鸣器状态 (自动关闭) */
+    buzzer_update();
 }
