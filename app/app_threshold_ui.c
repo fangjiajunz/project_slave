@@ -30,7 +30,7 @@ static const edit_item_t s_items[] = {
     {"Temp Lo",  FOFF(temp_low),  10,  -200, 600,  true,  "C"},
     {"Humi Hi",  FOFF(humi_high), 10,  0,    1000, true,  "%"},
     {"Humi Lo",  FOFF(humi_low),  10,  0,    1000, true,  "%"},
-    {"PH Thrs", FOFF(soil_dry),  100, 0,    4095, false, ""},
+    {"Soil Dry", FOFF(soil_dry), 100, 0,    4095, false, ""},
     {"Light Lo", FOFF(light_low), 100, 0,    4095, false, ""},
     {"CO2 Hi",   FOFF(co2_high),  50,  0,    5000, false, "ppm"},
 };

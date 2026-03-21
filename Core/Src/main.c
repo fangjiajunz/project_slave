@@ -201,7 +201,7 @@ int main(void)
     MX_ADC1_Init();
     //  MX_USART1_UART_Init();
     /* USER CODE BEGIN 2 */
-    HAL_TIM_Base_Start_IT(&htim2); /* 启动 TIM2 1ms 定时中断 */
+    /* TIM2 仅用于蜂鸣器 PWM，1ms 节拍由 SysTick 提供 */
     uart_init();                   // 初始化USB串口
     bsp_InitUart();
     /* 等待 USB 枚举完成 */
