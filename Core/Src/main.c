@@ -205,7 +205,9 @@ int main(void)
     uart_init();                   // 初始化USB串口
     bsp_InitUart();
     /* 等待 USB 枚举完成 */
+#if USB_DEBUG_ENABLE
     HAL_Delay(2000);
+#endif
 
     /* 设置日志级别 */
     log_set_level(LOG_DEBUG);
@@ -270,10 +272,30 @@ int main(void)
             TF_Accept(&tf, rx_buf, rx_len);
         }
 
-        /* 3. 阈值编辑 UI 轮询 (按键 + OLED) */
+        /* 3. 按键唤醒 + OLED 超时检查 */
+        if (key_any_activity())
+        {
+            if (app_display_is_off())
+            {
+                /* 屏幕关闭: 唤醒屏幕，消费按键不执行动作 */
+                app_display_activity();
+                key_check_press(KEY_NAME_UP);
+                key_check_press(KEY_NAME_DOWN);
+                key_check_press(KEY_NAME_ENTER);
+                key_check_long_press(KEY_NAME_ENTER);
+            }
+            else
+            {
+                /* 屏幕开启: 重置自动关屏计时器 */
+                app_display_activity();
+            }
+        }
+        app_display_timeout_check();
+
+        /* 3.5 阈值编辑 UI 轮询 (按键 + OLED) */
         app_threshold_ui_poll();
 
-        /* 3.5 设备控制 UI 轮询 (按键选择设备 + toggle) */
+        /* 3.6 设备控制 UI 轮询 (按键选择设备 + toggle) */
         app_devctrl_ui_poll();
 
         /* 4. 定时读取 ADC 传感器 (每 500ms，4 次采样取平均) + 刷新 OLED */
@@ -312,6 +334,7 @@ int main(void)
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
+        __WFI(); /* 等待中断，降低空闲功耗 (SysTick/UART/DIO1 唤醒) */
     }
     /* USER CODE END 3 */
 }

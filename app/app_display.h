@@ -1,6 +1,7 @@
 #ifndef APP_DISPLAY_H
 #define APP_DISPLAY_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /**
@@ -21,5 +22,20 @@ void app_display_init(void);
 void app_display_sensor(int16_t temp, uint16_t humi,
                         uint16_t light, uint16_t soil,
                         uint16_t co2, const char *dev_status);
+
+/**
+ * @brief  标记用户活动 (按键按下时调用)，如果屏幕已关闭则点亮
+ */
+void app_display_activity(void);
+
+/**
+ * @brief  检查超时并自动关屏 (主循环中调用)
+ */
+void app_display_timeout_check(void);
+
+/**
+ * @brief  屏幕是否处于关闭状态
+ */
+bool app_display_is_off(void);
 
 #endif /* APP_DISPLAY_H */

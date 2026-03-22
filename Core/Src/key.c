@@ -12,6 +12,15 @@ typedef struct
 		bool is_long_press;
 }key_config_t;
 
+static volatile bool s_any_key_activity = false;
+
+bool key_any_activity(void)
+{
+	bool ret = s_any_key_activity;
+	s_any_key_activity = false;
+	return ret;
+}
+
 static key_config_t key_group[3] =
 {
 		[ KEY_NAME_UP ] = {
@@ -77,6 +86,7 @@ static inline void key_press( key_name_t name )
 	/* 如果短按超过判定时间 */
 	if( key_group[name].count > KEY_SHORT_PRESS_TIME_MS )
 	{
+		s_any_key_activity = true;
 		/* 长按检测: 超过 1000ms 触发长按 */
 		if( key_group[name].count > KEY_LONG_PRESS_TIME_MS )
 		{

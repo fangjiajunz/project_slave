@@ -1,5 +1,6 @@
 #include "app_display.h"
 #include "dispDirver.h"
+#include "main.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -40,15 +41,51 @@
 /* ---- 底部状态行 ---- */
 #define STATUS_Y    63
 
+/* ---- OLED 自动关屏 ---- */
+#define OLED_TIMEOUT_MS  30000  /* 30 秒无操作自动关屏 */
+
+static uint32_t s_last_activity_tick = 0;
+static bool     s_oled_off = false;
+
 void app_display_init(void)
 {
     Disp_Init();
+    s_last_activity_tick = HAL_GetTick();
+    s_oled_off = false;
+}
+
+void app_display_activity(void)
+{
+    s_last_activity_tick = HAL_GetTick();
+    if (s_oled_off)
+    {
+        OLED_SetPowerSave(0);  /* 点亮屏幕 */
+        s_oled_off = false;
+    }
+}
+
+void app_display_timeout_check(void)
+{
+    if (!s_oled_off &&
+        (HAL_GetTick() - s_last_activity_tick >= OLED_TIMEOUT_MS))
+    {
+        OLED_SetPowerSave(1);  /* 关闭屏幕 (SSD1306 进入省电模式) */
+        s_oled_off = true;
+    }
+}
+
+bool app_display_is_off(void)
+{
+    return s_oled_off;
 }
 
 void app_display_sensor(int16_t temp, uint16_t humi,
                         uint16_t light, uint16_t soil,
                         uint16_t co2, const char *dev_status)
 {
+    if (s_oled_off)
+        return;  /* 屏幕关闭时跳过刷新，省电 */
+
     char buf[16];
 
     OLED_ClearBuffer();

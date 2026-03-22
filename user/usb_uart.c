@@ -2,7 +2,10 @@
 #include "usbd_cdc_if.h"
 #include "byte_queue.h"
 #include <stdbool.h>
- 
+
+#ifndef USB_DEBUG_ENABLE
+#define USB_DEBUG_ENABLE 1
+#endif
 
 /* USB CDC UART Configuration */
 #define CONFIG_UART_TX_SIZE 512
@@ -22,7 +25,9 @@ void uart_init() {
 	_b_inited = true;
     byte_queue_init(&uart_tx_queue, tx_cache, TX_CACHE_SIZE);
 	byte_queue_init(&uart_rx_queue, rx_cache, RX_CACHE_SIZE);
+#if USB_DEBUG_ENABLE
 	MX_USB_DEVICE_Init();
+#endif
 }
 
 void uart_deinit(void) {
@@ -34,6 +39,7 @@ void uart_deinit(void) {
 }
 
 void uart_tx_poll(void) {
+#if USB_DEBUG_ENABLE
 	uint8_t buffer[32];
 	while(true) {
 		if (CDC_Transmit_isBusy() == USBD_BUSY) {
@@ -45,10 +51,12 @@ void uart_tx_poll(void) {
 		}
 		CDC_Transmit_FS(buffer, len);
 	}
+#endif
 }
 extern void serial_on_data_received(uint8_t *buffer, uint16_t len);
 
 void uart_rx_poll(void) {
+#if USB_DEBUG_ENABLE
 	uint8_t buffer[64];
 	while(true) {
 		uint16_t len = byte_queue_read(&uart_rx_queue, buffer, sizeof(buffer));
@@ -57,6 +65,7 @@ void uart_rx_poll(void) {
 		}
 		serial_on_data_received(buffer, len);
 	}
+#endif
 }
 
 void usb_uart_rx_handler(uint8_t *data, uint32_t len) {
