@@ -1,4 +1,4 @@
-﻿/* USER CODE BEGIN Header */
+/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
  * @file           : main.c
@@ -255,7 +255,7 @@ int main(void)
 
         /* 1. USB 轮询 */
         uart_tx_poll();
-        uart_rx_poll();
+//        uart_rx_poll();
 
         /* 1.5 CO2 传感器串口数据解析 (每轮主循环都调用) */
         app_co2_poll();
