@@ -56,7 +56,7 @@ static uint8_t s_led_auto;       /* 自动LED: 0=关, 1=开 */
 
 /* ========================== 蜂鸣器控制 ========================== */
 
-#define BUZZER_DURATION_MS  5000  /* 蜂鸣器响铃时长 1秒 */
+#define BUZZER_DURATION_MS  5000  /* 蜂鸣器响铃时长 5秒 */
 static uint32_t s_buzzer_off_tick = 0;  /* 蜂鸣器关闭时刻，0表示未激活 */
 
 static void buzzer_trigger(void)
