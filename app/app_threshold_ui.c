@@ -39,9 +39,11 @@ static const edit_item_t s_items[] = {
 #define ITEM_COUNT (sizeof(s_items) / sizeof(s_items[0]))
 #define THRESH_SNAPSHOT_PAYLOAD_SIZE (1 + 8 * 3)
 
-static bool    s_active = false;
-static uint8_t s_index  = 0;
-static bool    s_dirty  = false;
+static bool    s_active    = false;
+static uint8_t s_index     = 0;
+static bool    s_dirty     = false;
+static bool    s_edit_mode = false;  /* false=导航模式, true=编辑模式 */
+static int16_t s_saved_val = 0;     /* 进入编辑前的备份值 */
 
 static int16_t *field_ptr(uint8_t idx)
 {
@@ -99,9 +101,17 @@ static void fmt_val(char *buf, uint8_t idx)
     }
 }
 
+/*
+ * 三行滚动列表:  上一项 / 当前项(光标) / 下一项
+ *
+ * 导航模式  当前行: [Name:value]   — 方括号包住整行
+ * 编辑模式  当前行: >Name:[value]  — > 前缀 + 方括号包住值
+ * 其余行:          " Name:value"  — 空格对齐
+ */
 static void draw_edit_screen(void)
 {
     char buf[24];
+    char line[28];
 
     OLED_ClearBuffer();
 
@@ -114,18 +124,28 @@ static void draw_edit_screen(void)
             continue;
 
         uint8_t row = (uint8_t)(rel + 1);
-
-        OLED_DrawStr(0, ROW_Y[row], rel == 0 ? ">" : " ");
-
         fmt_val(buf, (uint8_t)idx);
-        char line[24];
-        snprintf(line, sizeof(line), "%s:%s", s_items[idx].name, buf);
-        OLED_DrawStr(8, ROW_Y[row], line);
+
+        if (rel == 0)
+        {
+            if (s_edit_mode)
+                snprintf(line, sizeof(line), ">%s:[%s]", s_items[idx].name, buf);
+            else
+                snprintf(line, sizeof(line), "[%s:%s]", s_items[idx].name, buf);
+        }
+        else
+        {
+            snprintf(line, sizeof(line), " %s:%s", s_items[idx].name, buf);
+        }
+        OLED_DrawStr(0, ROW_Y[row], line);
     }
 
     OLED_DrawLine(0, 52, 127, 52);
-    snprintf(buf, sizeof(buf), "U:+ D:- [%d/%d] OK:>",
-             s_index + 1, (int)ITEM_COUNT);
+
+    if (s_edit_mode)
+        snprintf(buf, sizeof(buf), "UD:+/- OK:ok LO:cxl");
+    else
+        snprintf(buf, sizeof(buf), "UD:sel OK:edt LO:sv");
     OLED_DrawStr(0, 63, buf);
 
     OLED_SendBuffer();
@@ -133,9 +153,10 @@ static void draw_edit_screen(void)
 
 void app_threshold_ui_init(void)
 {
-    s_active = false;
-    s_index  = 0;
-    s_dirty  = false;
+    s_active    = false;
+    s_index     = 0;
+    s_dirty     = false;
+    s_edit_mode = false;
 }
 
 bool app_threshold_ui_is_active(void)
@@ -149,11 +170,10 @@ void app_threshold_ui_poll(void)
     {
         if (key_check_long_press(KEY_NAME_ENTER))
         {
-            s_active = true;
-            s_index  = 0;
-            s_dirty  = true;
-            key_set_continue(KEY_NAME_UP, true);
-            key_set_continue(KEY_NAME_DOWN, true);
+            s_active    = true;
+            s_index     = 0;
+            s_edit_mode = false;
+            s_dirty     = true;
             log_info("Threshold edit: enter");
         }
         return;
@@ -161,40 +181,91 @@ void app_threshold_ui_poll(void)
 
     bool changed = false;
 
-    if (key_check_press(KEY_NAME_UP))
+    if (!s_edit_mode)
     {
-        int16_t val = *field_ptr(s_index);
-        val += s_items[s_index].step;
-        if (val > s_items[s_index].max_val)
-            val = s_items[s_index].max_val;
-        *field_ptr(s_index) = val;
-        changed = true;
-    }
+        /* ======== 导航模式 ======== */
 
-    if (key_check_press(KEY_NAME_DOWN))
-    {
-        int16_t val = *field_ptr(s_index);
-        val -= s_items[s_index].step;
-        if (val < s_items[s_index].min_val)
-            val = s_items[s_index].min_val;
-        *field_ptr(s_index) = val;
-        changed = true;
-    }
+        if (key_check_press(KEY_NAME_UP))
+        {
+            if (s_index > 0)
+            {
+                s_index--;
+                changed = true;
+            }
+        }
 
-    if (key_check_press(KEY_NAME_ENTER))
-    {
-        s_index++;
-        if (s_index >= ITEM_COUNT)
+        if (key_check_press(KEY_NAME_DOWN))
+        {
+            if (s_index < ITEM_COUNT - 1)
+            {
+                s_index++;
+                changed = true;
+            }
+        }
+
+        /* 短按 ENTER: 进入编辑模式，备份当前值 */
+        if (key_check_press(KEY_NAME_ENTER))
+        {
+            s_saved_val = *field_ptr(s_index);
+            s_edit_mode = true;
+            key_set_continue(KEY_NAME_UP, true);
+            key_set_continue(KEY_NAME_DOWN, true);
+            changed = true;
+        }
+
+        /* 长按 ENTER: 保存并上报，退出 */
+        if (key_check_long_press(KEY_NAME_ENTER))
         {
             app_config_save();
             report_threshold_snapshot();
-            s_active = false;
-            key_set_continue(KEY_NAME_UP, false);
-            key_set_continue(KEY_NAME_DOWN, false);
+            s_active    = false;
+            s_edit_mode = false;
             log_info("Threshold edit: saved, reported & exit");
             return;
         }
-        changed = true;
+    }
+    else
+    {
+        /* ======== 编辑模式 ======== */
+
+        if (key_check_press(KEY_NAME_UP))
+        {
+            int16_t val = *field_ptr(s_index);
+            val += s_items[s_index].step;
+            if (val > s_items[s_index].max_val)
+                val = s_items[s_index].max_val;
+            *field_ptr(s_index) = val;
+            changed = true;
+        }
+
+        if (key_check_press(KEY_NAME_DOWN))
+        {
+            int16_t val = *field_ptr(s_index);
+            val -= s_items[s_index].step;
+            if (val < s_items[s_index].min_val)
+                val = s_items[s_index].min_val;
+            *field_ptr(s_index) = val;
+            changed = true;
+        }
+
+        /* 短按 ENTER: 确认，返回导航模式 */
+        if (key_check_press(KEY_NAME_ENTER))
+        {
+            s_edit_mode = false;
+            key_set_continue(KEY_NAME_UP, false);
+            key_set_continue(KEY_NAME_DOWN, false);
+            changed = true;
+        }
+
+        /* 长按 ENTER: 取消，还原备份值，返回导航模式 */
+        if (key_check_long_press(KEY_NAME_ENTER))
+        {
+            *field_ptr(s_index) = s_saved_val;
+            s_edit_mode = false;
+            key_set_continue(KEY_NAME_UP, false);
+            key_set_continue(KEY_NAME_DOWN, false);
+            changed = true;
+        }
     }
 
     if (changed || s_dirty)
