@@ -39,11 +39,14 @@ static const edit_item_t s_items[] = {
 #define ITEM_COUNT (sizeof(s_items) / sizeof(s_items[0]))
 #define THRESH_SNAPSHOT_PAYLOAD_SIZE (1 + 8 * 3)
 
-static bool    s_active    = false;
-static uint8_t s_index     = 0;
-static bool    s_dirty     = false;
-static bool    s_edit_mode = false;  /* false=导航模式, true=编辑模式 */
-static int16_t s_saved_val = 0;     /* 进入编辑前的备份值 */
+static bool     s_active     = false;
+static uint8_t  s_index      = 0;
+static bool     s_dirty      = false;
+static bool     s_edit_mode  = false;  /* false=导航模式, true=编辑模式 */
+static int16_t  s_saved_val  = 0;     /* 进入编辑前的备份值 */
+static uint32_t s_enter_tick = 0;     /* 进入 UI 的时间戳，防止长按穿透 */
+
+#define THRESH_UI_ENTER_GUARD_MS 800U
 
 static int16_t *field_ptr(uint8_t idx)
 {
@@ -153,10 +156,11 @@ static void draw_edit_screen(void)
 
 void app_threshold_ui_init(void)
 {
-    s_active    = false;
-    s_index     = 0;
-    s_dirty     = false;
-    s_edit_mode = false;
+    s_active     = false;
+    s_index      = 0;
+    s_dirty      = false;
+    s_edit_mode  = false;
+    s_enter_tick = 0;
 }
 
 bool app_threshold_ui_is_active(void)
@@ -170,10 +174,11 @@ void app_threshold_ui_poll(void)
     {
         if (key_check_long_press(KEY_NAME_ENTER))
         {
-            s_active    = true;
-            s_index     = 0;
-            s_edit_mode = false;
-            s_dirty     = true;
+            s_active     = true;
+            s_index      = 0;
+            s_edit_mode  = false;
+            s_dirty      = true;
+            s_enter_tick = HAL_GetTick();
             log_info("Threshold edit: enter");
         }
         return;
@@ -213,8 +218,9 @@ void app_threshold_ui_poll(void)
             changed = true;
         }
 
-        /* 长按 ENTER: 保存并上报，退出 */
-        if (key_check_long_press(KEY_NAME_ENTER))
+        /* 长按 ENTER: 保存并上报，退出（进入后 800ms 保护窗口内不响应）*/
+        if (key_check_long_press(KEY_NAME_ENTER) &&
+            (HAL_GetTick() - s_enter_tick >= THRESH_UI_ENTER_GUARD_MS))
         {
             app_config_save();
             report_threshold_snapshot();
