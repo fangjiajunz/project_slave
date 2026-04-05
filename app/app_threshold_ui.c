@@ -27,13 +27,13 @@ typedef struct {
 #define FOFF(f) ((uint8_t)offsetof(threshold_config_t, f))
 
 static const edit_item_t s_items[] = {
-    {"Temp Hi",  FOFF(temp_high), 10,  -200, 600,  true,  "C"},
-    {"Temp Lo",  FOFF(temp_low),  10,  -200, 600,  true,  "C"},
-    {"Humi Hi",  FOFF(humi_high), 10,  0,    1000, true,  "%"},
-    {"Humi Lo",  FOFF(humi_low),  10,  0,    1000, true,  "%"},
-    {"Soil Dry", FOFF(soil_dry), 100, 0,    4095, false, ""},
-    {"Light Lo", FOFF(light_low), 100, 0,    4095, false, ""},
-    {"CO2 Hi",   FOFF(co2_high),  50,  0,    5000, false, "ppm"},
+    {"Temp High", FOFF(temp_high), 10,  -200, 600,  true,  "C"},
+    {"Temp Low",  FOFF(temp_low),  10,  -200, 600,  true,  "C"},
+    {"Humi High", FOFF(humi_high), 10,  0,    1000, true,  "%"},
+    {"Humi Low",  FOFF(humi_low),  10,  0,    1000, true,  "%"},
+    {"Soil Dry",  FOFF(soil_dry), 100,  0,    4095, false, ""},
+    {"Light Low", FOFF(light_low), 100, 0,    4095, false, ""},
+    {"CO2 High",  FOFF(co2_high),  50,  0,    5000, false, "ppm"},
 };
 
 #define ITEM_COUNT (sizeof(s_items) / sizeof(s_items[0]))
@@ -81,38 +81,53 @@ static void report_threshold_snapshot(void)
     }
 }
 
-static void draw_edit_screen(void)
+static void fmt_val(char *buf, uint8_t idx)
 {
-    const edit_item_t *item = &s_items[s_index];
-    int16_t val = *field_ptr(s_index);
-    char buf[24];
-
-    OLED_ClearBuffer();
-
-    sprintf(buf, "[%d/%d] %s", s_index + 1, (int)ITEM_COUNT, item->name);
-    OLED_DrawStr(0, 12, buf);
-
+    const edit_item_t *item = &s_items[idx];
+    int16_t val = *field_ptr(idx);
     if (item->div10)
     {
-        int16_t abs_val = (int16_t)(val < 0 ? -val : val);
-        sprintf(buf, "%s%d.%d%s%s",
+        int16_t a = (int16_t)(val < 0 ? -val : val);
+        sprintf(buf, "%s%d.%d%s",
                 val < 0 ? "-" : "",
-                abs_val / 10, abs_val % 10,
-                item->unit[0] ? " " : "",
+                a / 10, a % 10,
                 item->unit);
     }
     else
     {
-        sprintf(buf, "%d%s%s", val,
-                item->unit[0] ? " " : "",
-                item->unit);
+        sprintf(buf, "%d%s", val, item->unit);
     }
+}
+
+static void draw_edit_screen(void)
+{
+    char buf[24];
+
+    OLED_ClearBuffer();
+
+    static const uint8_t ROW_Y[3] = {13, 30, 47};
+
+    for (int8_t rel = -1; rel <= 1; rel++)
     {
-        uint16_t w = OLED_GetStrWidth(buf);
-        OLED_DrawStr((128 - w) / 2, 38, buf);
+        int8_t idx = (int8_t)s_index + rel;
+        if (idx < 0 || idx >= (int8_t)ITEM_COUNT)
+            continue;
+
+        uint8_t row = (uint8_t)(rel + 1);
+
+        OLED_DrawStr(0, ROW_Y[row], rel == 0 ? ">" : " ");
+
+        fmt_val(buf, (uint8_t)idx);
+        char line[24];
+        snprintf(line, sizeof(line), "%s:%s", s_items[idx].name, buf);
+        OLED_DrawStr(8, ROW_Y[row], line);
     }
 
-    OLED_DrawStr(0, 60, "UP:+ DOWN:- OK:>");
+    OLED_DrawLine(0, 52, 127, 52);
+    snprintf(buf, sizeof(buf), "U:+ D:- [%d/%d] OK:>",
+             s_index + 1, (int)ITEM_COUNT);
+    OLED_DrawStr(0, 63, buf);
+
     OLED_SendBuffer();
 }
 
