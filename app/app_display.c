@@ -4,48 +4,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*
- * 布局: 上 3 列 + 下 2 列 + 底部设备状态行
- *
- * +----------+----------+----------+
- * | Temp     | Humi     | Light    |  上半区 0~26
- * | 25.0C    | 55.0%    | 3200     |
- * +----------+-----+----+----------+
- * | Soil          | CO2            |  下半区 27~52
- * | 30.0%         | 400ppm         |
- * +---------------+----------------+
- * | >Fan:OFF                       |  底部状态行 53~63
- * +--------------------------------+
- */
+#define TOP_COL1    2
+#define TOP_COL2    44
+#define TOP_COL3    87
+#define TOP_LABEL_Y 10
+#define TOP_VALUE_Y 22
 
-/* ---- 上半区: 3 列, 每列 ~42px ---- */
-#define TOP_COL1    2       /* Temp  x 起点 */
-#define TOP_COL2    44      /* Humi  x 起点 */
-#define TOP_COL3    87      /* Light x 起点 */
-#define TOP_LABEL_Y 10      /* 标签 baseline */
-#define TOP_VALUE_Y 22      /* 数值 baseline */
+#define BOT_COL1    2
+#define BOT_COL2    66
+#define BOT_LABEL_Y 38
+#define BOT_VALUE_Y 50
 
-/* ---- 下半区: 2 列, 每列 64px ---- */
-#define BOT_COL1    2       /* Soil x 起点 */
-#define BOT_COL2    66      /* CO2  x 起点 */
-#define BOT_LABEL_Y 38      /* 标签 baseline */
-#define BOT_VALUE_Y 50      /* 数值 baseline */
+#define DIV_H_Y     26
+#define DIV_TOP_V1  42
+#define DIV_TOP_V2  85
+#define DIV_BOT_V   63
+#define DIV_H2_Y    54
 
-/* ---- 分割线 ---- */
-#define DIV_H_Y     26      /* 水平分割线 */
-#define DIV_TOP_V1  42      /* 上半区竖线 1 */
-#define DIV_TOP_V2  85      /* 上半区竖线 2 */
-#define DIV_BOT_V   63      /* 下半区竖线 */
-#define DIV_H2_Y    54      /* 底部分割线 */
-
-/* ---- 底部状态行 ---- */
 #define STATUS_Y    63
-
-/* ---- OLED 自动关屏 ---- */
-#define OLED_TIMEOUT_MS  30000  /* 30 秒无操作自动关屏 */
+#define OLED_TIMEOUT_MS  30000
 
 static uint32_t s_last_activity_tick = 0;
 static bool     s_oled_off = false;
+
+static uint16_t soil_estimate_percent_x10(uint16_t soil_raw)
+{
+    if (soil_raw >= 4095U)
+        return 0;
+    if (soil_raw <= 1000U)
+        return 1000;
+
+    return (uint16_t)(((uint32_t)(4095U - soil_raw) * 1000U) /
+                      (4095U - 1000U));
+}
 
 void app_display_init(void)
 {
@@ -59,17 +50,16 @@ void app_display_activity(void)
     s_last_activity_tick = HAL_GetTick();
     if (s_oled_off)
     {
-        OLED_SetPowerSave(0);  /* 点亮屏幕 */
+        OLED_SetPowerSave(0);
         s_oled_off = false;
     }
 }
 
 void app_display_timeout_check(void)
 {
-    if (!s_oled_off &&
-        (HAL_GetTick() - s_last_activity_tick >= OLED_TIMEOUT_MS))
+    if (!s_oled_off && (HAL_GetTick() - s_last_activity_tick >= OLED_TIMEOUT_MS))
     {
-        OLED_SetPowerSave(1);  /* 关闭屏幕 (SSD1306 进入省电模式) */
+        OLED_SetPowerSave(1);
         s_oled_off = true;
     }
 }
@@ -83,48 +73,43 @@ void app_display_sensor(int16_t temp, uint16_t humi,
                         uint16_t light, uint16_t soil,
                         uint16_t co2, const char *dev_status)
 {
-    if (s_oled_off)
-        return;  /* 屏幕关闭时跳过刷新，省电 */
-
     char buf[16];
+    uint16_t soil_percent_x10;
+
+    if (s_oled_off)
+        return;
+
+    soil_percent_x10 = soil_estimate_percent_x10(soil);
 
     OLED_ClearBuffer();
+    OLED_DrawLine(0, DIV_H_Y, 127, DIV_H_Y);
+    OLED_DrawLine(DIV_TOP_V1, 0, DIV_TOP_V1, DIV_H_Y);
+    OLED_DrawLine(DIV_TOP_V2, 0, DIV_TOP_V2, DIV_H_Y);
+    OLED_DrawLine(DIV_BOT_V, DIV_H_Y, DIV_BOT_V, DIV_H2_Y);
 
-    /* ---- 分割线 ---- */
-    OLED_DrawLine(0, DIV_H_Y, 127, DIV_H_Y);          /* 水平 */
-    OLED_DrawLine(DIV_TOP_V1, 0, DIV_TOP_V1, DIV_H_Y); /* 上竖线 1 */
-    OLED_DrawLine(DIV_TOP_V2, 0, DIV_TOP_V2, DIV_H_Y); /* 上竖线 2 */
-    OLED_DrawLine(DIV_BOT_V, DIV_H_Y, DIV_BOT_V, DIV_H2_Y); /* 下竖线 */
-
-    /* ---- 上左: 温度 ---- */
     OLED_DrawStr(TOP_COL1, TOP_LABEL_Y, "Temp");
     sprintf(buf, "%d.%dC", temp / 10, abs(temp % 10));
     OLED_DrawStr(TOP_COL1, TOP_VALUE_Y, buf);
 
-    /* ---- 上中: 湿度 ---- */
     OLED_DrawStr(TOP_COL2, TOP_LABEL_Y, "Humi");
     sprintf(buf, "%d.%d%%", humi / 10, humi % 10);
     OLED_DrawStr(TOP_COL2, TOP_VALUE_Y, buf);
 
-    /* ---- 上右: 光照 ---- */
     OLED_DrawStr(TOP_COL3, TOP_LABEL_Y, "Light");
     sprintf(buf, "%u", light);
     OLED_DrawStr(TOP_COL3, TOP_VALUE_Y, buf);
 
-    /* ---- 下左: 土壤湿度 ---- */
-    OLED_DrawStr(BOT_COL1, BOT_LABEL_Y, "Soil");
-    sprintf(buf, "%u.%u%%", soil / 10, soil % 10);
+    OLED_DrawStr(BOT_COL1, BOT_LABEL_Y, "Soil%");
+    sprintf(buf, "%u.%u%%", soil_percent_x10 / 10, soil_percent_x10 % 10);
     OLED_DrawStr(BOT_COL1, BOT_VALUE_Y, buf);
 
-    /* ---- 下右: CO2 ---- */
     OLED_DrawStr(BOT_COL2, BOT_LABEL_Y, "CO2");
     sprintf(buf, "%uppm", co2);
     OLED_DrawStr(BOT_COL2, BOT_VALUE_Y, buf);
 
-    /* ---- 底部: 设备状态行 ---- */
     if (dev_status)
     {
-        OLED_DrawLine(0, DIV_H2_Y, 127, DIV_H2_Y);  /* 底部分割线 */
+        OLED_DrawLine(0, DIV_H2_Y, 127, DIV_H2_Y);
         OLED_DrawStr(2, STATUS_Y, dev_status);
     }
 
