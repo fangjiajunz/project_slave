@@ -1,5 +1,6 @@
 #include "app_threshold.h"
 
+#include "app_display.h"
 #include "app_relay.h"
 #include "config.h"
 #include "main.h"
@@ -87,6 +88,12 @@ void app_threshold_manual_override(uint8_t dev_id)
     }
 }
 
+void app_threshold_buzzer_dismiss(void)
+{
+    buzzer_off();
+    s_buzzer_off_tick = 0;
+}
+
 void app_threshold_init(void)
 {
     s_fan_by_temp = 0;
@@ -115,6 +122,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
             log_info("TEMP HIGH: %d.%d > %d.%d -> FAN ON",
                      temp_x10 / 10, temp_x10 % 10,
                      cfg->temp_high / 10, cfg->temp_high % 10);
+            app_display_alert("! TEMP HIGH", "Fan ON");
             buzzer_trigger();  /* 温度过高报警 */
         }
         else if (s_fan_by_temp && temp_x10 < (cfg->temp_high - HYST_TEMP))
@@ -133,6 +141,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
             log_info("TEMP LOW: %d.%d < %d.%d -> HEATER ON",
                      temp_x10 / 10, temp_x10 % 10,
                      cfg->temp_low / 10, cfg->temp_low % 10);
+            app_display_alert("! TEMP LOW", "Heater ON");
             buzzer_trigger();  /* 温度过低报警 */
         }
         else if (s_heater_auto && temp_x10 > (cfg->temp_low + HYST_TEMP))
@@ -155,6 +164,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
         {
             s_pump_auto = 1;
             log_info("SOIL DRY: %u > %u -> PUMP ON", soil_raw, cfg->soil_dry);
+            app_display_alert("! SOIL DRY", "Pump ON");
             buzzer_trigger();  /* 土壤干燥报警 */
         }
         else if (s_pump_auto && soil_raw < (cfg->soil_dry - HYST_SOIL))
@@ -175,6 +185,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
         {
             s_led_auto = 1;
             log_info("LIGHT LOW: %u < %u -> LED ON", light_raw, cfg->light_low);
+            app_display_alert("! LIGHT LOW", "LED ON");
             buzzer_trigger();  /* 光照不足报警 */
         }
         else if (s_led_auto && light_raw > (cfg->light_low + HYST_LIGHT))
@@ -195,6 +206,7 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
         {
             s_fan_by_co2 = 1;
             log_info("CO2 HIGH: %u > %u -> FAN ON", co2_ppm, cfg->co2_high);
+            app_display_alert("! CO2 HIGH", "Fan ON");
             buzzer_trigger();  /* CO2过高报警 */
         }
         else if (s_fan_by_co2 && co2_ppm < (cfg->co2_high - HYST_CO2))

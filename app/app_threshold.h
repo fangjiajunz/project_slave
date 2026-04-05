@@ -26,4 +26,9 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
  */
 void app_threshold_manual_override(uint8_t dev_id);
 
+/**
+ * @brief  立即关闭蜂鸣器（按键消警时调用）
+ */
+void app_threshold_buzzer_dismiss(void);
+
 #endif /* APP_THRESHOLD_H */

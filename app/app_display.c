@@ -3,6 +3,7 @@
 #include "main.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define TOP_COL1    2
 #define TOP_COL2    44
@@ -26,6 +27,40 @@
 
 static uint32_t s_last_activity_tick = 0;
 static bool     s_oled_off = false;
+
+/* ---- 弹窗状态 ---- */
+#define ALERT_DURATION_MS  3000
+#define ALERT_X            10
+#define ALERT_Y            12
+#define ALERT_W            108
+#define ALERT_H            38
+#define ALERT_CORNER_R     4
+
+static char     s_alert_title[16] = {0};
+static char     s_alert_msg[16]   = {0};
+static uint32_t s_alert_off_tick  = 0;   /* 0 = 无弹窗 */
+
+static void draw_alert_overlay(void)
+{
+    /* 背景白色实心圆角矩形（覆盖内容）*/
+    OLED_SetDrawColor(1);
+    OLED_DrawRBox(ALERT_X, ALERT_Y, ALERT_W, ALERT_H, ALERT_CORNER_R);
+
+    /* 黑色边框 */
+    OLED_SetDrawColor(0);
+    OLED_DrawRFrame(ALERT_X, ALERT_Y, ALERT_W, ALERT_H, ALERT_CORNER_R);
+
+    /* 标题行（黑字）*/
+    OLED_DrawStr(ALERT_X + 6, ALERT_Y + 13, s_alert_title);
+
+    /* 分割线 */
+    OLED_DrawLine(ALERT_X + 4, ALERT_Y + 16, ALERT_X + ALERT_W - 5, ALERT_Y + 16);
+
+    /* 内容行 */
+    OLED_DrawStr(ALERT_X + 6, ALERT_Y + 30, s_alert_msg);
+
+    OLED_SetDrawColor(1);  /* 恢复默认颜色 */
+}
 
 static uint16_t soil_estimate_percent_x10(uint16_t soil_raw)
 {
@@ -113,5 +148,35 @@ void app_display_sensor(int16_t temp, uint16_t humi,
         OLED_DrawStr(2, STATUS_Y, dev_status);
     }
 
+    /* 弹窗叠层（有激活弹窗时覆盖在传感器数据上方） */
+    if (s_alert_off_tick != 0)
+        draw_alert_overlay();
+
     OLED_SendBuffer();
+}
+
+void app_display_alert(const char *title, const char *msg)
+{
+    if (title) { strncpy(s_alert_title, title, sizeof(s_alert_title) - 1); s_alert_title[sizeof(s_alert_title) - 1] = '\0'; }
+    if (msg)   { strncpy(s_alert_msg,   msg,   sizeof(s_alert_msg)   - 1); s_alert_msg[sizeof(s_alert_msg)   - 1] = '\0'; }
+    s_alert_off_tick = HAL_GetTick() + ALERT_DURATION_MS;
+    if (s_alert_off_tick == 0) s_alert_off_tick = 1;  /* 避免 0 = 禁用 */
+    /* 唤醒屏幕 */
+    app_display_activity();
+}
+
+void app_display_alert_dismiss(void)
+{
+    s_alert_off_tick = 0;
+}
+
+bool app_display_alert_is_active(void)
+{
+    return (s_alert_off_tick != 0);
+}
+
+void app_display_alert_tick(void)
+{
+    if (s_alert_off_tick != 0 && HAL_GetTick() >= s_alert_off_tick)
+        s_alert_off_tick = 0;
 }

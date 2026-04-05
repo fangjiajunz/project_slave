@@ -284,6 +284,16 @@ int main(void)
                 key_check_press(KEY_NAME_ENTER);
                 key_check_long_press(KEY_NAME_ENTER);
             }
+            else if (app_display_alert_is_active())
+            {
+                /* 弹窗显示中: 任意按键关闭弹窗 + 蜂鸣器，消费按键不透传 */
+                app_display_alert_dismiss();
+                app_threshold_buzzer_dismiss();
+                key_check_press(KEY_NAME_UP);
+                key_check_press(KEY_NAME_DOWN);
+                key_check_press(KEY_NAME_ENTER);
+                key_check_long_press(KEY_NAME_ENTER);
+            }
             else
             {
                 /* 屏幕开启: 重置自动关屏计时器 */
@@ -291,6 +301,7 @@ int main(void)
             }
         }
         app_display_timeout_check();
+        app_display_alert_tick();
 
         /* 3.5 阈值编辑 UI 轮询 (按键 + OLED) */
         app_threshold_ui_poll();

@@ -38,4 +38,27 @@ void app_display_timeout_check(void);
  */
 bool app_display_is_off(void);
 
+/**
+ * @brief  显示报警弹窗 (叠加在传感器页上方，持续 3 秒后自动消失)
+ *
+ * @param  title  弹窗标题，如 "! TEMP HIGH"
+ * @param  msg    弹窗内容，如 "Fan ON"
+ */
+void app_display_alert(const char *title, const char *msg);
+
+/**
+ * @brief  立即关闭弹窗
+ */
+void app_display_alert_dismiss(void);
+
+/**
+ * @brief  弹窗是否正在显示
+ */
+bool app_display_alert_is_active(void);
+
+/**
+ * @brief  弹窗刷新 (主循环中调用，处理自动消失逻辑)
+ */
+void app_display_alert_tick(void);
+
 #endif /* APP_DISPLAY_H */
