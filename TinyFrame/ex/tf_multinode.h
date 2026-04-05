@@ -134,6 +134,8 @@ typedef enum
 #define TF_THRESH_FIELD_CO2_HIGH   6
 #define TF_THRESH_FIELD_ENABLE     7
 
+#define TF_DATA_KIND_THRESHOLD_SNAPSHOT 0xA1
+
 /* ========================== 状态响应结构 ========================== */
 
 /* 传感器数据 */

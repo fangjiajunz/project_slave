@@ -4,6 +4,7 @@
 #include "config.h"
 #include "dispDirver.h"
 #include "main.h"
+#include "tf_slave.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -11,16 +12,16 @@
 #define LOG_TAG "ThreshUI"
 #include "log.h"
 
-/* ========================== 编辑项描述表 ========================== */
+extern TinyFrame tf;
 
 typedef struct {
-    const char *name;       /* 显示名称 */
-    uint8_t    offset;      /* offsetof(threshold_config_t, field) */
-    int16_t    step;        /* UP/DOWN 步长 */
-    int16_t    min_val;     /* 最小值 */
-    int16_t    max_val;     /* 最大值 */
-    bool       div10;       /* 是否 /10 显示 */
-    const char *unit;       /* 单位字符串 ("" 表示无单位) */
+    const char *name;
+    uint8_t    offset;
+    int16_t    step;
+    int16_t    min_val;
+    int16_t    max_val;
+    bool       div10;
+    const char *unit;
 } edit_item_t;
 
 #define FOFF(f) ((uint8_t)offsetof(threshold_config_t, f))
@@ -36,22 +37,49 @@ static const edit_item_t s_items[] = {
 };
 
 #define ITEM_COUNT (sizeof(s_items) / sizeof(s_items[0]))
+#define THRESH_SNAPSHOT_PAYLOAD_SIZE (1 + 8 * 3)
 
-/* ========================== 状态变量 ========================== */
+static bool    s_active = false;
+static uint8_t s_index  = 0;
+static bool    s_dirty  = false;
 
-static bool    s_active = false;   /* 是否在编辑模式 */
-static uint8_t s_index  = 0;      /* 当前编辑项 0~6 */
-static bool    s_dirty  = false;   /* 需要刷新屏幕 */
-
-/* ========================== 字段访问 ========================== */
-
-/* 所有编辑字段均为 2 字节，值范围 -200~5000，int16_t 可覆盖 */
 static int16_t *field_ptr(uint8_t idx)
 {
     return (int16_t *)((uint8_t *)&g_sys_config.threshold[0] + s_items[idx].offset);
 }
 
-/* ========================== OLED 绘制 ========================== */
+static void append_threshold_field(uint8_t *payload, uint8_t *len, uint8_t field_id, int16_t value)
+{
+    payload[(*len)++] = field_id;
+    payload[(*len)++] = (uint8_t)(value & 0xFF);
+    payload[(*len)++] = (uint8_t)((value >> 8) & 0xFF);
+}
+
+static void report_threshold_snapshot(void)
+{
+    const threshold_config_t *th = &g_sys_config.threshold[0];
+    uint8_t payload[THRESH_SNAPSHOT_PAYLOAD_SIZE];
+    uint8_t len = 0;
+
+    payload[len++] = TF_DATA_KIND_THRESHOLD_SNAPSHOT;
+    append_threshold_field(payload, &len, TF_THRESH_FIELD_TEMP_HIGH, th->temp_high);
+    append_threshold_field(payload, &len, TF_THRESH_FIELD_TEMP_LOW, th->temp_low);
+    append_threshold_field(payload, &len, TF_THRESH_FIELD_HUMI_HIGH, (int16_t)th->humi_high);
+    append_threshold_field(payload, &len, TF_THRESH_FIELD_HUMI_LOW, (int16_t)th->humi_low);
+    append_threshold_field(payload, &len, TF_THRESH_FIELD_SOIL_DRY, (int16_t)th->soil_dry);
+    append_threshold_field(payload, &len, TF_THRESH_FIELD_LIGHT_LOW, (int16_t)th->light_low);
+    append_threshold_field(payload, &len, TF_THRESH_FIELD_CO2_HIGH, (int16_t)th->co2_high);
+    append_threshold_field(payload, &len, TF_THRESH_FIELD_ENABLE, (int16_t)th->enable);
+
+    if (TF_Slave_ReportData(&tf, payload, len))
+    {
+        log_info("Threshold snapshot reported (%d bytes)", len);
+    }
+    else
+    {
+        log_warn("Threshold snapshot report failed");
+    }
+}
 
 static void draw_edit_screen(void)
 {
@@ -61,11 +89,9 @@ static void draw_edit_screen(void)
 
     OLED_ClearBuffer();
 
-    /* 行1 y=12: "[n/7] Name" */
     sprintf(buf, "[%d/%d] %s", s_index + 1, (int)ITEM_COUNT, item->name);
     OLED_DrawStr(0, 12, buf);
 
-    /* 行2 y=38: 当前值 (居中) */
     if (item->div10)
     {
         int16_t abs_val = (int16_t)(val < 0 ? -val : val);
@@ -81,16 +107,14 @@ static void draw_edit_screen(void)
                 item->unit[0] ? " " : "",
                 item->unit);
     }
-    uint16_t w = OLED_GetStrWidth(buf);
-    OLED_DrawStr((128 - w) / 2, 38, buf);
+    {
+        uint16_t w = OLED_GetStrWidth(buf);
+        OLED_DrawStr((128 - w) / 2, 38, buf);
+    }
 
-    /* 行3 y=60: 操作提示 */
     OLED_DrawStr(0, 60, "UP:+ DOWN:- OK:>");
-
     OLED_SendBuffer();
 }
-
-/* ========================== 公共接口 ========================== */
 
 void app_threshold_ui_init(void)
 {
@@ -108,7 +132,6 @@ void app_threshold_ui_poll(void)
 {
     if (!s_active)
     {
-        /* 非编辑模式: ENTER 长按进入编辑 */
         if (key_check_long_press(KEY_NAME_ENTER))
         {
             s_active = true;
@@ -121,7 +144,6 @@ void app_threshold_ui_poll(void)
         return;
     }
 
-    /* ---- 编辑模式 ---- */
     bool changed = false;
 
     if (key_check_press(KEY_NAME_UP))
@@ -149,12 +171,12 @@ void app_threshold_ui_poll(void)
         s_index++;
         if (s_index >= ITEM_COUNT)
         {
-            /* 全部编辑完成，保存 NVM 并退出 */
             app_config_save();
+            report_threshold_snapshot();
             s_active = false;
             key_set_continue(KEY_NAME_UP, false);
             key_set_continue(KEY_NAME_DOWN, false);
-            log_info("Threshold edit: saved & exit");
+            log_info("Threshold edit: saved, reported & exit");
             return;
         }
         changed = true;
