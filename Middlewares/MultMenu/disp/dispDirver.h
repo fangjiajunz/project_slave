@@ -25,5 +25,6 @@ void OLED_SetPowerSave(uint8_t is_enable);
 uint8_t OLED_GetBufferTileHeight(void);
 uint8_t OLED_GetBufferTileWidth(void);
 uint8_t *OLED_GetBufferPtr(void);
+void OLED_DrawChinese(uint16_t x, uint16_t y, uint8_t index);
 
 #endif

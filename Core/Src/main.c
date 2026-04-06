@@ -48,14 +48,16 @@
 #include "log.h"
 #include "tf_multinode.h"
 #include "usb_uart.h"
-#define TF_SLAVE_ADDRESS 1 /* 从机地址 (1-14) */
+#include "dispDirver.h"
+#include "font_chinese.h"
+#define TF_SLAVE_ADDRESS 1
+ /* 从机地址 (1-14) */
 
 #include "tf_slave.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#include "dispDirver.h"
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -237,10 +239,14 @@ int main(void)
 
     log_info("System Ready!");
     /* USER CODE END 2 */
+		    OLED_ClearBuffer();
+		  OLED_DrawChinese(10, 20, CH_WEN);
 
+ 
+    OLED_SendBuffer();
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    while (1)
+    while (0)
     {
         /* 0. TF_Tick 超时驱动 - 在主循环中调用，避免中断上下文阻塞 */
         {

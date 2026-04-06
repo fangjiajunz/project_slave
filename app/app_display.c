@@ -1,20 +1,22 @@
 #include "app_display.h"
 #include "dispDirver.h"
+#include "font_chinese.h"
 #include "main.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define TOP_COL1    2
-#define TOP_COL2    44
-#define TOP_COL3    87
-#define TOP_LABEL_Y 10
-#define TOP_VALUE_Y 22
+/* 中文标签布局：汉字16×16，两个汉字约32像素+间距 */
+#define TOP_COL1    0      /* 温度 */
+#define TOP_COL2    40     /* 湿度 */
+#define TOP_COL3    80     /* 光照 */
+#define TOP_LABEL_Y 6
+#define TOP_VALUE_Y 24
 
-#define BOT_COL1    2
-#define BOT_COL2    66
-#define BOT_LABEL_Y 38
-#define BOT_VALUE_Y 50
+#define BOT_COL1    0      /* 土壤 */
+#define BOT_COL2    64     /* CO2 */
+#define BOT_LABEL_Y 36
+#define BOT_VALUE_Y 52
 
 #define DIV_H_Y     26
 #define DIV_TOP_V1  42
@@ -122,22 +124,31 @@ void app_display_sensor(int16_t temp, uint16_t humi,
     OLED_DrawLine(DIV_TOP_V2, 0, DIV_TOP_V2, DIV_H_Y);
     OLED_DrawLine(DIV_BOT_V, DIV_H_Y, DIV_BOT_V, DIV_H2_Y);
 
-    OLED_DrawStr(TOP_COL1, TOP_LABEL_Y, "Temp");
+    /* 温度 */
+    OLED_DrawChinese(TOP_COL1, TOP_LABEL_Y, CH_WEN);
+    OLED_DrawChinese(TOP_COL1 + 16, TOP_LABEL_Y, CH_DU);
     sprintf(buf, "%d.%dC", temp / 10, abs(temp % 10));
     OLED_DrawStr(TOP_COL1, TOP_VALUE_Y, buf);
 
-    OLED_DrawStr(TOP_COL2, TOP_LABEL_Y, "Humi");
+    /* 湿度 */
+    OLED_DrawChinese(TOP_COL2, TOP_LABEL_Y, CH_SHI);
+    OLED_DrawChinese(TOP_COL2 + 16, TOP_LABEL_Y, CH_DU);
     sprintf(buf, "%d.%d%%", humi / 10, humi % 10);
     OLED_DrawStr(TOP_COL2, TOP_VALUE_Y, buf);
 
-    OLED_DrawStr(TOP_COL3, TOP_LABEL_Y, "Light");
+    /* 光照 */
+    OLED_DrawChinese(TOP_COL3, TOP_LABEL_Y, CH_GUANG);
+    OLED_DrawChinese(TOP_COL3 + 16, TOP_LABEL_Y, CH_ZHAO);
     sprintf(buf, "%u", light);
     OLED_DrawStr(TOP_COL3, TOP_VALUE_Y, buf);
 
-    OLED_DrawStr(BOT_COL1, BOT_LABEL_Y, "Soil%");
+    /* 土壤% */
+    OLED_DrawChinese(BOT_COL1, BOT_LABEL_Y, CH_TU);
+    OLED_DrawChinese(BOT_COL1 + 16, BOT_LABEL_Y, CH_RANG);
     sprintf(buf, "%u.%u%%", soil_percent_x10 / 10, soil_percent_x10 % 10);
     OLED_DrawStr(BOT_COL1, BOT_VALUE_Y, buf);
 
+    /* CO2 */
     OLED_DrawStr(BOT_COL2, BOT_LABEL_Y, "CO2");
     sprintf(buf, "%uppm", co2);
     OLED_DrawStr(BOT_COL2, BOT_VALUE_Y, buf);
