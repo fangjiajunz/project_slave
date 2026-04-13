@@ -146,7 +146,9 @@ void app_display_sensor(int16_t temp, uint16_t humi,
         OLED_DrawLine(0, DIV_H2_Y, 127, DIV_H2_Y);
         OLED_DrawStr(2, STATUS_Y, dev_status);
     }
-
+	    /* 弹窗叠层（有激活弹窗时覆盖在传感器数据上方） */
+    if (s_alert_off_tick != 0)
+        draw_alert_overlay();
     OLED_SendBuffer();
 }
 

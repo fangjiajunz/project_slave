@@ -1180,11 +1180,6 @@
               <FileType>1</FileType>
               <FilePath>..\Middlewares\MultMenu\menu\menu.c</FilePath>
             </File>
-            <File>
-              <FileName>font_chinese.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\app\font_chinese.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

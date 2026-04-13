@@ -238,14 +238,10 @@ int main(void)
 
     log_info("System Ready!");
     /* USER CODE END 2 */
-		    OLED_ClearBuffer();
-		  OLED_DrawStr(10, 20, "Init");
-
  
-    OLED_SendBuffer();
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    while (0)
+    while (1)
     {
         /* 0. TF_Tick 超时驱动 - 在主循环中调用，避免中断上下文阻塞 */
         {
