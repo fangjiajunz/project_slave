@@ -49,7 +49,6 @@
 #include "tf_multinode.h"
 #include "usb_uart.h"
 #include "dispDirver.h"
-#include "font_chinese.h"
 #define TF_SLAVE_ADDRESS 1
  /* 从机地址 (1-14) */
 
@@ -240,7 +239,7 @@ int main(void)
     log_info("System Ready!");
     /* USER CODE END 2 */
 		    OLED_ClearBuffer();
-		  OLED_DrawChinese(10, 20, CH_WEN);
+		  OLED_DrawStr(10, 20, "Init");
 
  
     OLED_SendBuffer();
