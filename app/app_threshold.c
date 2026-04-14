@@ -228,8 +228,8 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
         if (!s_led_auto && light_raw > cfg->light_low)
         {
             s_led_auto = 1;
-            log_info("LIGHT LOW: %u > %u -> LED ON", light_raw, cfg->light_low);
-            app_display_alert("! LIGHT LOW", "LED ON");
+            log_info("LIGHT HIGH: %u > %u -> LED ON", light_raw, cfg->light_low);
+            app_display_alert("! LIGHT HIGH", "LED ON");
             buzzer_trigger();
         }
         else if (s_led_auto && light_raw < (cfg->light_low - HYST_LIGHT))
