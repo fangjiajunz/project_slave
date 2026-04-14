@@ -19,7 +19,7 @@ extern sys_config_t g_sys_config;
 
 #define HYST_TEMP   20
 #define HYST_HUMI   50
-#define HYST_SOIL   200
+#define HYST_SOIL   20
 #define HYST_LIGHT  200
 #define HYST_CO2    50
 
@@ -38,6 +38,18 @@ static uint8_t s_humi_low_alarm;
 
 #define BUZZER_DURATION_MS  5000
 static uint32_t s_buzzer_off_tick = 0;
+
+/**
+ * @brief  百分比 x10 → ADC 原始值 (soil_estimate_percent_x10 的反函数)
+ *         percent_x10: 0~1000 (0.0%~100.0%)
+ *         返回: ADC 原始值 ~1000~4095
+ */
+static uint16_t soil_percent_x10_to_adc(uint16_t percent_x10)
+{
+    if (percent_x10 >= 1000U) return 1000U;  /* 100% → ADC 最小 (最湿) */
+    if (percent_x10 == 0U)    return 4095U;  /* 0%   → ADC 最大 (最干) */
+    return (uint16_t)(4095U - (uint32_t)percent_x10 * (4095U - 1000U) / 1000U);
+}
 
 static bool is_manual_active(uint8_t dev_id)
 {
@@ -186,18 +198,25 @@ void app_threshold_check(int16_t temp_x10, uint16_t humi_x10,
 
     if (cfg->enable & THRESH_EN_SOIL)
     {
-        if (!s_pump_auto && soil_raw > cfg->soil_dry)
+        /* soil_dry 存储为 x10 百分比，转换为 ADC 阈值进行比较 */
+        uint16_t soil_adc_thresh = soil_percent_x10_to_adc(cfg->soil_dry);
+        uint16_t soil_adc_hyst   = soil_percent_x10_to_adc(
+            (cfg->soil_dry + HYST_SOIL > 1000U) ? 1000U : (cfg->soil_dry + HYST_SOIL));
+
+        if (!s_pump_auto && soil_raw > soil_adc_thresh)
         {
             s_pump_auto = 1;
-            log_info("SOIL DRY: %u > %u -> PUMP ON", soil_raw, cfg->soil_dry);
+            log_info("SOIL DRY: %u > %u (thresh %u.%u%%) -> PUMP ON",
+                     soil_raw, soil_adc_thresh,
+                     cfg->soil_dry / 10, cfg->soil_dry % 10);
             app_display_alert("! SOIL DRY", "Pump ON");
             buzzer_trigger();
         }
-        else if (s_pump_auto && soil_raw < (cfg->soil_dry - HYST_SOIL))
+        else if (s_pump_auto && soil_raw < soil_adc_hyst)
         {
             s_pump_auto = 0;
             log_info("SOIL OK: %u < %u -> PUMP OFF",
-                     soil_raw, cfg->soil_dry - HYST_SOIL);
+                     soil_raw, soil_adc_hyst);
         }
 
         if (!is_manual_active(TF_CTRL_DEV_PUMP))
