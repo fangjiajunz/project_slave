@@ -49,7 +49,7 @@
 #include "tf_multinode.h"
 #include "usb_uart.h"
 #include "dispDirver.h"
-#define TF_SLAVE_ADDRESS 1
+#define TF_SLAVE_ADDRESS 2
  /* 从机地址 (1-14) */
 
 #include "tf_slave.h"
